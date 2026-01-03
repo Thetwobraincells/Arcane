@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'controllers/report_controller.dart';
 import 'theme/arcane_theme.dart';
-import 'views/screens/dashboard_screen.dart';
+import 'views/screens/main_scaffold.dart';
 
 void main() {
   runApp(const ArcaneMedicalApp());
@@ -19,10 +18,13 @@ class ArcaneMedicalApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Arcane Medical Dashboard',
         debugShowCheckedModeBanner: false,
-        theme: ArcaneTheme.lightTheme,
-        home: const DashboardScreen(),
+        
+        // Ensure this theme defines the dark colors for the full effect
+        theme: ArcaneTheme.lightTheme, 
+        
+        // This is the key change: Load the Scaffold with Nav Bar first
+        home: MainScaffold(), 
       ),
     );
   }
 }
-

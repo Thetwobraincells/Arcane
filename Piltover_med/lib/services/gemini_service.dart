@@ -22,21 +22,39 @@ class GeminiService {
     );
   }
 
-  Future<LabReport> analyzeImage(dynamic imageInput) async {
+  Future<LabReport> analyzeImage(dynamic imageInput, {String? fileName}) async {
     // Handle both File (mobile/desktop) and Uint8List (web)
     final Uint8List imageBytes;
+    String? detectedFileName = fileName;
+    
     if (imageInput is File) {
       imageBytes = await imageInput.readAsBytes();
+      detectedFileName ??= imageInput.path.split('/').last;
     } else if (imageInput is Uint8List) {
       imageBytes = imageInput;
     } else {
       throw Exception('Invalid image input type. Expected File or Uint8List.');
     }
     
+    // Determine mime type based on file extension
+    String mimeType = 'image/jpeg'; // Default to image
+    if (detectedFileName != null) {
+      final extension = detectedFileName.toLowerCase().split('.').last;
+      if (extension == 'pdf') {
+        mimeType = 'application/pdf';
+      } else if (extension == 'png') {
+        mimeType = 'image/png';
+      } else if (extension == 'jpg' || extension == 'jpeg') {
+        mimeType = 'image/jpeg';
+      } else if (extension == 'webp') {
+        mimeType = 'image/webp';
+      }
+    }
+    
     // 1. The Prompt: Teach Gemini your Data Model
     final prompt = Content.multi([
       TextPart('''
-        Analyze this medical lab report image. Extract the data and return ONLY a JSON object.
+        Analyze this medical lab report ${mimeType == 'application/pdf' ? 'PDF document' : 'image'}. Extract the data and return ONLY a JSON object.
         
         The JSON must match this exact schema:
         {
@@ -63,7 +81,7 @@ class GeminiService {
         - If a value is missing, use "N/A". Ensure numeric values are cleaned of text.
         - Make explanations friendly and reassuring when results are normal, and clear but not alarming when there are concerns
       '''),
-      DataPart('image/jpeg', imageBytes), // Supports png/jpeg/webp
+      DataPart(mimeType, imageBytes), // Use detected mime type (supports images and PDFs)
     ]);
 
     // 2. Send to Gemini

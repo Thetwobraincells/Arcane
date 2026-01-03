@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../controllers/upload_controller.dart';
 import '../../controllers/report_controller.dart';
 import '../../utils/constants.dart';
+import 'hover_button.dart';
 
 class UploadModal extends StatefulWidget {
   const UploadModal({super.key});
@@ -196,9 +197,8 @@ class _UploadModalState extends State<UploadModal> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return _HoverableOptionButton(
       onTap: _isProcessing ? null : onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -385,11 +385,11 @@ class _UploadModalState extends State<UploadModal> {
             ),
           ),
           const SizedBox(height: 16),
-          // Analyze button
+          // Analyze button with hover effect
           SizedBox(
             width: double.infinity,
             height: 50,
-            child: ElevatedButton(
+            child: HoverButton(
               onPressed: _isProcessing ? null : _handleAnalyze,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(AppConstants.hextechBlue),
@@ -510,11 +510,14 @@ class _UploadModalState extends State<UploadModal> {
       Navigator.of(context).pop();
 
       // 3. Call the REAL AI Logic
-      // Pass the selected file/bytes and context
+      // Pass the selected file/bytes and context with file name for mime type detection
+      String? fileName;
       if (kIsWeb && _selectedFileBytes != null) {
-        await reportController.analyzeFile(_selectedFileBytes!, context);
+        fileName = _selectedFileName;
+        await reportController.analyzeFile(_selectedFileBytes!, context, fileName: fileName);
       } else if (_selectedFile != null) {
-        await reportController.analyzeFile(_selectedFile!, context);
+        fileName = _selectedFile!.path.split('/').last;
+        await reportController.analyzeFile(_selectedFile!, context, fileName: fileName);
       }
 
     } catch (e) {
@@ -546,6 +549,42 @@ class _UploadModalState extends State<UploadModal> {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
+// Hoverable wrapper for option buttons
+class _HoverableOptionButton extends StatefulWidget {
+  final VoidCallback? onTap;
+  final Widget child;
+
+  const _HoverableOptionButton({
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  State<_HoverableOptionButton> createState() => _HoverableOptionButtonState();
+}
+
+class _HoverableOptionButtonState extends State<_HoverableOptionButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.05 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: widget.child,
+        ),
+      ),
+    );
   }
 }
 

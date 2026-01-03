@@ -5,6 +5,8 @@ import '../../models/lab_report_model.dart';
 import '../widgets/hextech_header.dart';
 import '../widgets/test_result_card.dart';
 import '../widgets/glowing_card.dart';
+import '../widgets/upload_modal.dart';
+import '../widgets/hover_button.dart';
 import '../../utils/constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -19,9 +21,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ReportController>().loadSampleData();
-    });
+    // Sample data loading removed - reports will only show uploaded/analyzed reports
   }
 
   @override
@@ -41,11 +41,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
             final reports = controller.reports;
             
             if (reports.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No reports available',
-                  style: TextStyle(color: Colors.white70),
-                ),
+              return CustomScrollView(
+                slivers: [
+                  const SliverToBoxAdapter(
+                    child: HextechHeader(),
+                  ),
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: _buildEmptyState(),
+                    ),
+                  ),
+                ],
               );
             }
 
@@ -356,6 +363,94 @@ class _ReportsScreenState extends State<ReportsScreen> {
       'normalPercentage': normalPercentage,
       'abnormalPercentage': abnormalPercentage,
     };
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: GlowingCard(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(AppConstants.hextechBlue).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(AppConstants.hextechBlue).withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.upload_file,
+                  color: Color(AppConstants.hextechBlue),
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Title
+              Text(
+                'No Reports Yet',
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Message
+              Text(
+                'Upload a medical report to generate insights and track your health data.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.7),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Upload Button with hover effect
+              HoverButton(
+                onPressed: () {
+                  showUploadModal(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(AppConstants.hextechBlue),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Upload Report',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildAIWarning() {

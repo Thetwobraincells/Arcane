@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/upload_modal.dart';
+import '../widgets/hover_button.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -135,7 +136,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ElevatedButton(
+                child: HoverButton(
                   onPressed: () {
                     showUploadModal(context);
                   },

@@ -19,7 +19,7 @@ class ReportController extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // ✅ REFACTORED: Non-blocking async flow
-  Future<void> analyzeFile(dynamic imageInput, BuildContext context) async {
+  Future<void> analyzeFile(dynamic imageInput, BuildContext context, {String? fileName}) async {
     try {
       // 1. ✅ Create placeholder report IMMEDIATELY
       final reportId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -36,7 +36,9 @@ class ReportController extends ChangeNotifier {
       mainScaffoldKey.currentState?.goToTab(1);
 
       // 4. ✅ Start AI analysis in background (non-blocking)
-      _analyzeInBackground(reportId, imageInput, context);
+      // Use provided fileName or try to extract from input
+      final detectedFileName = fileName ?? _getFileName(imageInput);
+      _analyzeInBackground(reportId, imageInput, context, fileName: detectedFileName);
 
     } catch (e) {
       print("Error starting analysis: $e");
@@ -56,11 +58,12 @@ class ReportController extends ChangeNotifier {
   Future<void> _analyzeInBackground(
     String reportId,
     dynamic imageInput,
-    BuildContext context,
-  ) async {
+    BuildContext context, {
+    String? fileName,
+  }) async {
     try {
       // Call AI Service (this takes 5-10 seconds)
-      final aiReport = await _aiService.analyzeImage(imageInput);
+      final aiReport = await _aiService.analyzeImage(imageInput, fileName: fileName);
 
       // Find the placeholder report and update it
       final index = _reports.indexWhere((r) => r.id == reportId);
@@ -120,50 +123,18 @@ class ReportController extends ChangeNotifier {
     }
     return null;
   }
-
-  // --- Existing Sample Data Logic (Kept for the demo) ---
-  void loadSampleData() {
-    _isLoading = true;
-    notifyListeners();
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _reports = [
-        LabReport(
-          id: '1',
-          patientName: 'John Doe',
-          patientId: 'P001',
-          reportDate: DateTime.now().subtract(const Duration(days: 14)),
-          testResults: [
-            TestResult(
-              testName: 'Hemoglobin',
-              value: '13.8',
-              unit: 'g/dL',
-              status: 'normal',
-              date: DateTime.now().subtract(const Duration(days: 14)),
-            ),
-            TestResult(
-              testName: 'Glucose (Fasting)',
-              value: '92',
-              unit: 'mg/dL',
-              status: 'normal',
-              date: DateTime.now().subtract(const Duration(days: 14)),
-            ),
-            TestResult(
-              testName: 'Total Cholesterol',
-              value: '185',
-              unit: 'mg/dL',
-              status: 'normal',
-              date: DateTime.now().subtract(const Duration(days: 14)),
-            ),
-          ],
-          notes: 'Routine checkup',
-          status: ReportStatus.completed, // ✅ Mark sample data as completed
-        ),
-      ];
-      _isLoading = false;
-      notifyListeners();
-    });
+  
+  // ✅ NEW: Helper to get file name for mime type detection
+  String? _getFileName(dynamic input) {
+    if (input is File) {
+      return input.path.split('/').last;
+    }
+    // For Uint8List, we'll need to get the name from upload controller
+    // This will be handled in the upload modal
+    return null;
   }
+
+  // Sample data method removed - reports will only show uploaded/analyzed reports
 
   void addReport(LabReport report) {
     _reports.add(report);

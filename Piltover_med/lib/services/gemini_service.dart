@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
@@ -7,7 +8,7 @@ import '../secrets.dart';
 
 class GeminiService {
   // ⚠️ SECURITY NOTE: In production, do not hardcode keys. Use --dart-define or a backend proxy.
-  static const String _apiKey = myGeminiKey;
+  static const String _apiKey = Secrets.geminiApiKey;
   
   late final GenerativeModel _model;
 
@@ -21,8 +22,16 @@ class GeminiService {
     );
   }
 
-  Future<LabReport> analyzeImage(File imageFile) async {
-    final imageBytes = await imageFile.readAsBytes();
+  Future<LabReport> analyzeImage(dynamic imageInput) async {
+    // Handle both File (mobile/desktop) and Uint8List (web)
+    final Uint8List imageBytes;
+    if (imageInput is File) {
+      imageBytes = await imageInput.readAsBytes();
+    } else if (imageInput is Uint8List) {
+      imageBytes = imageInput;
+    } else {
+      throw Exception('Invalid image input type. Expected File or Uint8List.');
+    }
     
     // 1. The Prompt: Teach Gemini your Data Model
     final prompt = Content.multi([

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/lab_report_model.dart';
@@ -17,13 +18,13 @@ class ReportController extends ChangeNotifier {
   List<LabReport> get reports => _reports;
   bool get isLoading => _isLoading;
 
-  Future<void> analyzeFile(File imageFile, BuildContext context) async {
+  Future<void> analyzeFile(dynamic imageInput, BuildContext context) async {
     _isLoading = true;
     notifyListeners();
 
   try {
-      // 1. Call AI Service
-      LabReport newReport = await _aiService.analyzeImage(imageFile);
+      // 1. Call AI Service (handles both File and Uint8List)
+      LabReport newReport = await _aiService.analyzeImage(imageInput);
 
       // 2. Add to List
       _reports.insert(0, newReport);

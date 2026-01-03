@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/lab_report_model.dart';
@@ -9,10 +10,14 @@ enum UploadStatus { idle, picking, processing, success, error }
 class UploadController extends ChangeNotifier {
   UploadStatus _status = UploadStatus.idle;
   File? _selectedFile;
+  Uint8List? _selectedFileBytes;
+  String? _selectedFileName;
   String? _errorMessage;
 
   UploadStatus get status => _status;
   File? get selectedFile => _selectedFile;
+  Uint8List? get selectedFileBytes => _selectedFileBytes;
+  String? get selectedFileName => _selectedFileName;
   String? get errorMessage => _errorMessage;
 
   // Maximum file size: 10MB
@@ -40,8 +45,57 @@ class UploadController extends ChangeNotifier {
         return null;
       }
 
-      final file = File(result.files.single.path!);
-      return _validateAndSetFile(file);
+      final pickedFile = result.files.single;
+      
+      // Handle web platform - use bytes instead of path
+      if (kIsWeb) {
+        if (pickedFile.bytes == null) {
+          _status = UploadStatus.error;
+          _errorMessage = 'Failed to read file bytes';
+          notifyListeners();
+          return null;
+        }
+        
+        _selectedFileBytes = pickedFile.bytes;
+        _selectedFileName = pickedFile.name;
+        _selectedFile = null; // File not available on web
+        
+        // Validate file size
+        if (_selectedFileBytes!.length > maxFileSizeBytes) {
+          _status = UploadStatus.error;
+          _errorMessage = 'File size exceeds 10MB limit';
+          _selectedFileBytes = null;
+          _selectedFileName = null;
+          notifyListeners();
+          return null;
+        }
+        
+        // Validate file extension
+        final extension = _selectedFileName!.split('.').last.toLowerCase();
+        if (!allowedExtensions.contains(extension)) {
+          _status = UploadStatus.error;
+          _errorMessage = 'File type not supported. Use JPG, PNG, or PDF';
+          _selectedFileBytes = null;
+          _selectedFileName = null;
+          notifyListeners();
+          return null;
+        }
+        
+        _status = UploadStatus.success;
+        notifyListeners();
+        return null; // Return null on web since File is not available
+      } else {
+        // Handle non-web platforms - use path
+        if (pickedFile.path == null) {
+          _status = UploadStatus.error;
+          _errorMessage = 'Failed to get file path';
+          notifyListeners();
+          return null;
+        }
+        
+        final file = File(pickedFile.path!);
+        return _validateAndSetFile(file);
+      }
     } catch (e) {
       _status = UploadStatus.error;
       _errorMessage = 'Failed to pick file: ${e.toString()}';
@@ -71,8 +125,46 @@ class UploadController extends ChangeNotifier {
         return null;
       }
 
-      final file = File(result.files.single.path!);
-      return _validateAndSetFile(file);
+      final pickedFile = result.files.single;
+      
+      // Handle web platform - use bytes instead of path
+      if (kIsWeb) {
+        if (pickedFile.bytes == null) {
+          _status = UploadStatus.error;
+          _errorMessage = 'Failed to read file bytes';
+          notifyListeners();
+          return null;
+        }
+        
+        _selectedFileBytes = pickedFile.bytes;
+        _selectedFileName = pickedFile.name;
+        _selectedFile = null; // File not available on web
+        
+        // Validate file size
+        if (_selectedFileBytes!.length > maxFileSizeBytes) {
+          _status = UploadStatus.error;
+          _errorMessage = 'File size exceeds 10MB limit';
+          _selectedFileBytes = null;
+          _selectedFileName = null;
+          notifyListeners();
+          return null;
+        }
+        
+        _status = UploadStatus.success;
+        notifyListeners();
+        return null; // Return null on web since File is not available
+      } else {
+        // Handle non-web platforms - use path
+        if (pickedFile.path == null) {
+          _status = UploadStatus.error;
+          _errorMessage = 'Failed to get file path';
+          notifyListeners();
+          return null;
+        }
+        
+        final file = File(pickedFile.path!);
+        return _validateAndSetFile(file);
+      }
     } catch (e) {
       _status = UploadStatus.error;
       _errorMessage = 'Failed to capture photo: ${e.toString()}';
@@ -142,6 +234,8 @@ class UploadController extends ChangeNotifier {
   void reset() {
     _status = UploadStatus.idle;
     _selectedFile = null;
+    _selectedFileBytes = null;
+    _selectedFileName = null;
     _errorMessage = null;
     notifyListeners();
   }

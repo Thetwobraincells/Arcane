@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +17,11 @@ class UploadModal extends StatefulWidget {
 
 class _UploadModalState extends State<UploadModal> {
   File? _selectedFile;
+  Uint8List? _selectedFileBytes;
+  String? _selectedFileName;
   bool _isProcessing = false;
+  
+  bool get _hasFile => _selectedFile != null || _selectedFileBytes != null;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +139,7 @@ class _UploadModalState extends State<UploadModal> {
           const SizedBox(height: 24),
 
           // File preview or upload options
-          _selectedFile != null
+          _hasFile
               ? _buildFilePreview()
               : _buildUploadOptions(),
 
@@ -253,11 +259,29 @@ class _UploadModalState extends State<UploadModal> {
 
   Widget _buildFilePreview() {
     final uploadController = context.read<UploadController>();
-    final fileSize = uploadController.getFileSizeString(_selectedFile!);
-    final fileName = _selectedFile!.path.split('/').last;
-    final isImage = fileName.toLowerCase().endsWith('.jpg') ||
-        fileName.toLowerCase().endsWith('.jpeg') ||
-        fileName.toLowerCase().endsWith('.png');
+    
+    // Get file info - handle both web (bytes) and non-web (File)
+    String fileName;
+    String fileSize;
+    bool isImage;
+    
+    if (kIsWeb && _selectedFileBytes != null) {
+      fileName = _selectedFileName ?? 'selected_file';
+      fileSize = _formatBytes(_selectedFileBytes!.length);
+      isImage = fileName.toLowerCase().endsWith('.jpg') ||
+          fileName.toLowerCase().endsWith('.jpeg') ||
+          fileName.toLowerCase().endsWith('.png');
+    } else if (_selectedFile != null) {
+      fileName = _selectedFile!.path.split('/').last;
+      fileSize = uploadController.getFileSizeString(_selectedFile!);
+      isImage = fileName.toLowerCase().endsWith('.jpg') ||
+          fileName.toLowerCase().endsWith('.jpeg') ||
+          fileName.toLowerCase().endsWith('.png');
+    } else {
+      fileName = 'Unknown';
+      fileSize = '0 B';
+      isImage = false;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -279,12 +303,21 @@ class _UploadModalState extends State<UploadModal> {
                 if (isImage)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      _selectedFile!,
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                    child: kIsWeb && _selectedFileBytes != null
+                        ? Image.memory(
+                            _selectedFileBytes!,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : _selectedFile != null
+                            ? Image.file(
+                                _selectedFile!,
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : const SizedBox.shrink(),
                   )
                 else
                   Container(
@@ -338,6 +371,8 @@ class _UploadModalState extends State<UploadModal> {
                       onPressed: _isProcessing ? null : () {
                         setState(() {
                           _selectedFile = null;
+                          _selectedFileBytes = null;
+                          _selectedFileName = null;
                         });
                         uploadController.reset();
                       },
@@ -398,11 +433,20 @@ class _UploadModalState extends State<UploadModal> {
     final uploadController = context.read<UploadController>();
     final file = await uploadController.pickFromGallery();
     
-    if (file != null) {
-      setState(() {
+    setState(() {
+      if (kIsWeb) {
+        // On web, use bytes instead of File
+        _selectedFileBytes = uploadController.selectedFileBytes;
+        _selectedFileName = uploadController.selectedFileName;
+        _selectedFile = null;
+      } else {
         _selectedFile = file;
-      });
-    } else if (uploadController.errorMessage != null) {
+        _selectedFileBytes = null;
+        _selectedFileName = null;
+      }
+    });
+    
+    if (!_hasFile && uploadController.errorMessage != null) {
       _showError(uploadController.errorMessage!);
     }
   }
@@ -411,11 +455,20 @@ class _UploadModalState extends State<UploadModal> {
     final uploadController = context.read<UploadController>();
     final file = await uploadController.pickFromCamera();
     
-    if (file != null) {
-      setState(() {
+    setState(() {
+      if (kIsWeb) {
+        // On web, use bytes instead of File
+        _selectedFileBytes = uploadController.selectedFileBytes;
+        _selectedFileName = uploadController.selectedFileName;
+        _selectedFile = null;
+      } else {
         _selectedFile = file;
-      });
-    } else if (uploadController.errorMessage != null) {
+        _selectedFileBytes = null;
+        _selectedFileName = null;
+      }
+    });
+    
+    if (!_hasFile && uploadController.errorMessage != null) {
       _showError(uploadController.errorMessage!);
     }
   }
@@ -424,17 +477,26 @@ class _UploadModalState extends State<UploadModal> {
     final uploadController = context.read<UploadController>();
     final file = await uploadController.pickFromGallery(); // Same as gallery for now
     
-    if (file != null) {
-      setState(() {
+    setState(() {
+      if (kIsWeb) {
+        // On web, use bytes instead of File
+        _selectedFileBytes = uploadController.selectedFileBytes;
+        _selectedFileName = uploadController.selectedFileName;
+        _selectedFile = null;
+      } else {
         _selectedFile = file;
-      });
-    } else if (uploadController.errorMessage != null) {
+        _selectedFileBytes = null;
+        _selectedFileName = null;
+      }
+    });
+    
+    if (!_hasFile && uploadController.errorMessage != null) {
       _showError(uploadController.errorMessage!);
     }
   }
 
   Future<void> _handleAnalyze() async {
-    if (_selectedFile == null) return;
+    if (!_hasFile) return;
 
     setState(() {
       _isProcessing = true;
@@ -448,8 +510,12 @@ class _UploadModalState extends State<UploadModal> {
       Navigator.of(context).pop();
 
       // 3. Call the REAL AI Logic
-      // Pass the selected file and context
-      await reportController.analyzeFile(_selectedFile!, context);
+      // Pass the selected file/bytes and context
+      if (kIsWeb && _selectedFileBytes != null) {
+        await reportController.analyzeFile(_selectedFileBytes!, context);
+      } else if (_selectedFile != null) {
+        await reportController.analyzeFile(_selectedFile!, context);
+      }
 
     } catch (e) {
       // Error handling is done inside the controller now, 
@@ -474,6 +540,12 @@ class _UploadModalState extends State<UploadModal> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+  
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
 

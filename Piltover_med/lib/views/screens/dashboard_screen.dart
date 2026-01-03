@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/report_controller.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -134,33 +136,52 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Trigger Upload Logic
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    side: BorderSide(color: neonCyan),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.upload_file, color: neonCyan),
-                      const SizedBox(width: 12),
-                      Text(
-                        "UPLOAD REPORT",
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
+                // WRAP WITH CONSUMER TO HANDLE LOADING STATE
+                child: Consumer<ReportController>(
+                  builder: (context, controller, child) {
+                    // If AI is thinking, show a loading spinner
+                    if (controller.isLoading) {
+                      return Center(
+                        child: CircularProgressIndicator(color: neonCyan),
+                      );
+                    }
+
+                    // Otherwise, show the Upload Button
+                    return ElevatedButton(
+                      onPressed: () async {
+                        // TRIGGER THE UPLOAD
+                        await controller.uploadAndAnalyzeReport();
+                        
+                        // Optional: Navigate to Reports screen after success
+                        // (The '2' below assumes Reports is at index 1 or 2 in your nav bar)
+                        // This part depends on your navigation setup, but for now
+                        // the data will just appear in the Reports tab.
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        side: BorderSide(color: neonCyan),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.upload_file, color: neonCyan),
+                          const SizedBox(width: 12),
+                          Text(
+                            "UPLOAD REPORT",
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
               

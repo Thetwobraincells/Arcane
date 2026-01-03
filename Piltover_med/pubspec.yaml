@@ -1,0 +1,36 @@
+name: arcane_medical_app
+description: A Hextech-powered medical dashboard with Arcane aesthetics
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # File Handling
+  file_picker: ^6.1.1
+  
+  # UI Enhancement
+  google_fonts: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Optional: Add custom fonts for enhanced Arcane feel
+  # fonts:
+  #   - family: Cinzel
+  #     fonts:
+  #       - asset: fonts/Cinzel-Regular.ttf
+  #       - asset: fonts/Cinzel-Bold.ttf
+  #         weight: 700

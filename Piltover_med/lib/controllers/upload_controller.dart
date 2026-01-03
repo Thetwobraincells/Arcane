@@ -2,8 +2,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
-import '../models/lab_report_model.dart';
-import '../models/test_result_model.dart';
 
 enum UploadStatus { idle, picking, processing, success, error }
 
@@ -205,29 +203,6 @@ class UploadController extends ChangeNotifier {
     _status = UploadStatus.success;
     notifyListeners();
     return file;
-  }
-
-  /// Create a mock lab report from uploaded file
-  LabReport createMockReport(File file) {
-    final fileName = file.path.split('/').last;
-    final timestamp = DateTime.now();
-
-    return LabReport(
-      id: 'upload_${timestamp.millisecondsSinceEpoch}',
-      patientName: 'Processing...', // Will be updated after AI analysis
-      patientId: 'UPLOAD',
-      reportDate: timestamp,
-      testResults: [
-        TestResult(
-          testName: 'Report Analysis',
-          value: 'Processing',
-          unit: '',
-          status: 'processing',
-          date: timestamp,
-        ),
-      ],
-      notes: 'Uploaded: $fileName - Analyzing with AI...',
-    );
   }
 
   /// Reset controller state

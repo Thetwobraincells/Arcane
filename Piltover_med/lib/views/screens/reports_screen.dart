@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/report_controller.dart';
+import '../../models/lab_report_model.dart';
 import '../widgets/hextech_header.dart';
 import '../widgets/test_result_card.dart';
 import '../widgets/glowing_card.dart';
@@ -48,8 +49,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               );
             }
 
-            // Calculate statistics
-            final stats = _calculateStats(reports);
+            // ✅ Only calculate stats from completed reports
+            final completedReports = reports.where((r) => r.status == ReportStatus.completed).toList();
+            final stats = _calculateStats(completedReports);
 
             return CustomScrollView(
               slivers: [
@@ -63,21 +65,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     child: _buildAIWarning(),
                   ),
                 ),
-                // Test Status Distribution
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildStatusDistribution(stats),
+                // Test Status Distribution (only if we have completed reports)
+                if (completedReports.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    sliver: SliverToBoxAdapter(
+                      child: _buildStatusDistribution(stats),
+                    ),
                   ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                // Health Overview
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildTrendSection(stats),
+                if (completedReports.isNotEmpty)
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                // Health Overview (only if we have completed reports)
+                if (completedReports.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    sliver: SliverToBoxAdapter(
+                      child: _buildTrendSection(stats),
+                    ),
                   ),
-                ),
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
                 // Reports List
                 SliverPadding(
@@ -88,7 +93,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         final report = reports[index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
-                          child: TestResultCard(report: report),
+                          child: _buildReportCard(report), // ✅ New method handles all states
                         );
                       },
                       childCount: reports.length,
@@ -103,7 +108,213 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Map<String, dynamic> _calculateStats(reports) {
+  // ✅ NEW: Smart card builder based on report status
+  Widget _buildReportCard(LabReport report) {
+    switch (report.status) {
+      case ReportStatus.processing:
+        return _buildProcessingCard(report);
+      case ReportStatus.failed:
+        return _buildFailedCard(report);
+      case ReportStatus.completed:
+        return TestResultCard(report: report);
+    }
+  }
+
+  // ✅ NEW: Processing state card
+  Widget _buildProcessingCard(LabReport report) {
+    return GlowingCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(AppConstants.hextechBlue).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Color(AppConstants.hextechBlue),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Analyzing Report...',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(AppConstants.hextechBlue),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'AI is processing your medical report',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(AppConstants.hextechBlue).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: const Color(AppConstants.hextechBlue).withOpacity(0.7),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This usually takes 5-10 seconds. Results will appear here automatically.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ✅ NEW: Failed state card
+  Widget _buildFailedCard(LabReport report) {
+    return GlowingCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFEF4444),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Analysis Failed',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFEF4444),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        report.errorMessage ?? 'Unknown error occurred',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Possible reasons:',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '• Image quality is too low\n'
+                    '• Text is not clearly visible\n'
+                    '• File format is not supported\n'
+                    '• Network connection issue',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: Colors.white.withOpacity(0.5),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  context.read<ReportController>().removeReport(report.id);
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFEF4444)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Remove Report',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFFEF4444),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _calculateStats(List<LabReport> reports) {
     int totalTests = 0;
     int normalCount = 0;
     int highCount = 0;
@@ -242,14 +453,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
               'Low',
               stats['lowCount'],
               stats['totalTests'],
-              const Color(0xFF8B5CF6), // Purple
+              const Color(0xFF8B5CF6),
             ),
             const SizedBox(height: 12),
             _buildStatusBar(
               'Critical',
               stats['criticalCount'],
               stats['totalTests'],
-              const Color(0xFFEF4444), // Red (soft)
+              const Color(0xFFEF4444),
             ),
           ],
         ),
@@ -505,4 +716,3 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 }
-

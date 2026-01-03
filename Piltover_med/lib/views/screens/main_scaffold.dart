@@ -3,16 +3,18 @@ import 'dashboard_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
 import 'stats_screen.dart';
-import '../widgets/upload_modal.dart'; // ✅ ADD THIS IMPORT
+import '../widgets/upload_modal.dart';
+
+final GlobalKey<MainScaffoldState> mainScaffoldKey = GlobalKey<MainScaffoldState>();
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  const MainScaffold({super.key}) : super(key: mainScaffoldKey);
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
 
   // List of screens for navigation
@@ -24,6 +26,12 @@ class _MainScaffoldState extends State<MainScaffold> {
   ];
 
   void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void goToTab(int index) {
     setState(() {
       _currentIndex = index;
     });

@@ -18,46 +18,107 @@ class ReportController extends ChangeNotifier {
   List<LabReport> get reports => _reports;
   bool get isLoading => _isLoading;
 
+  // ✅ REFACTORED: Non-blocking async flow
   Future<void> analyzeFile(dynamic imageInput, BuildContext context) async {
-    _isLoading = true;
-    notifyListeners();
+    try {
+      // 1. ✅ Create placeholder report IMMEDIATELY
+      final reportId = DateTime.now().millisecondsSinceEpoch.toString();
+      final placeholderReport = LabReport.processing(
+        id: reportId,
+        filePath: _getFilePathForDisplay(imageInput),
+      );
 
-  try {
-      // 1. Call AI Service (handles both File and Uint8List)
-      LabReport newReport = await _aiService.analyzeImage(imageInput);
+      // 2. ✅ Add to list and notify (UI updates instantly)
+      _reports.insert(0, placeholderReport);
+      notifyListeners();
 
-      // 2. Add to List
-      _reports.insert(0, newReport);
-
-      // 3. Success Feedback
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Analysis Complete!"),
-            backgroundColor: Color(0xFF00D4FF), // Hextech Blue
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-
-      // 4. Navigation Magic (Switch to Reports Tab)
+      // 3. ✅ Navigate to Reports screen NOW (don't wait for AI)
       mainScaffoldKey.currentState?.goToTab(1);
 
+      // 4. ✅ Start AI analysis in background (non-blocking)
+      _analyzeInBackground(reportId, imageInput, context);
+
     } catch (e) {
-      print("AI Error: $e");
+      print("Error starting analysis: $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Analysis Failed: ${e.toString().split(':').last.trim()}"),
+            content: Text("Failed to start analysis: ${e.toString()}"),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+  }
+
+  // ✅ NEW: Background processing method
+  Future<void> _analyzeInBackground(
+    String reportId,
+    dynamic imageInput,
+    BuildContext context,
+  ) async {
+    try {
+      // Call AI Service (this takes 5-10 seconds)
+      final aiReport = await _aiService.analyzeImage(imageInput);
+
+      // Find the placeholder report and update it
+      final index = _reports.indexWhere((r) => r.id == reportId);
+      if (index != -1) {
+        _reports[index] = _reports[index].copyWithCompleted(
+          patientName: aiReport.patientName,
+          patientId: aiReport.patientId,
+          testResults: aiReport.testResults,
+          notes: aiReport.notes,
+        );
+        notifyListeners(); // ✅ UI updates with real data
+
+        // Success feedback (non-intrusive)
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Analysis Complete!"),
+              backgroundColor: Color(0xFF10B981), // Green
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("AI Error: $e");
+      
+      // Mark report as failed
+      final index = _reports.indexWhere((r) => r.id == reportId);
+      if (index != -1) {
+        _reports[index] = _reports[index].copyWithFailed(
+          e.toString().split(':').last.trim(),
+        );
+        notifyListeners(); // ✅ UI shows error state
+
+        // Error feedback
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Analysis Failed: ${e.toString().split(':').last.trim()}"),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  // ✅ NEW: Helper to get file path for display
+  String? _getFilePathForDisplay(dynamic input) {
+    if (input is File) {
+      return input.path;
+    } else if (input is Uint8List) {
+      return 'uploaded_file.${input.length > 0 ? "bin" : "unknown"}';
+    }
+    return null;
   }
 
   // --- Existing Sample Data Logic (Kept for the demo) ---
@@ -96,8 +157,8 @@ class ReportController extends ChangeNotifier {
             ),
           ],
           notes: 'Routine checkup',
+          status: ReportStatus.completed, // ✅ Mark sample data as completed
         ),
-        // ... You can keep the rest of your sample data here if you want ...
       ];
       _isLoading = false;
       notifyListeners();
@@ -121,7 +182,10 @@ class ReportController extends ChangeNotifier {
     int lowCount = 0;
     int criticalCount = 0;
 
-    for (var report in _reports) {
+    // ✅ Only count completed reports for statistics
+    final completedReports = _reports.where((r) => r.status == ReportStatus.completed);
+
+    for (var report in completedReports) {
       totalTests += report.testResults.length;
       for (var test in report.testResults) {
         switch (test.status.toLowerCase()) {
@@ -142,7 +206,7 @@ class ReportController extends ChangeNotifier {
     }
 
     return {
-      'totalReports': _reports.length,
+      'totalReports': completedReports.length,
       'totalTests': totalTests,
       'normalCount': normalCount,
       'highCount': highCount,

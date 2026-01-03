@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
-import '../services/gemini_service.dart'; // Make sure you created this file in Phase 2!
+import '../services/gemini_service.dart';
 
 class ReportController extends ChangeNotifier {
   List<LabReport> _reports = [];

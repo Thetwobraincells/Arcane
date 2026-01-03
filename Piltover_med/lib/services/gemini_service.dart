@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
+import '../secrets.dart';
+// ...
 
 class GeminiService {
   // ⚠️ SECURITY NOTE: In production, do not hardcode keys. Use --dart-define or a backend proxy.
-  static const String _apiKey = 'YOUR_GEMINI_API_KEY_HERE';
+  static const String _apiKey = 'AIzaSyC55Y0HNPagmyrDJY-e0wi7vywfdaZRvjY';
   
   late final GenerativeModel _model;
 

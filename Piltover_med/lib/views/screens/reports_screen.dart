@@ -7,6 +7,7 @@ import '../widgets/test_result_card.dart';
 import '../widgets/glowing_card.dart';
 import '../widgets/upload_modal.dart';
 import '../widgets/hover_button.dart';
+import '../widgets/bobbing_hextech_core.dart';
 import '../../utils/constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -143,12 +144,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     color: const Color(AppConstants.hextechBlue).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Color(AppConstants.hextechBlue),
-                      strokeWidth: 2,
+                  child: const Center(
+                    child: BobbingHextechCore(
+                      width: 40,
+                      height: 40,
                     ),
                   ),
                 ),

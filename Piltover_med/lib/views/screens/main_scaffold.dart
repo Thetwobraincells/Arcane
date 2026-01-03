@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart'; // Import your existing dashboard
+import 'dashboard_screen.dart';
+import 'settings_screen.dart'; // Add this import
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -15,15 +16,24 @@ class _MainScaffoldState extends State<MainScaffold> {
   final List<Widget> _screens = [
     const DashboardScreen(),      // 0: Home
     const Center(child: Text("Reports Screen", style: TextStyle(color: Colors.white))), // 1: Placeholder
-    const SizedBox(),             // 2: Placeholder for the center Add button (handled by FAB)
-    const Center(child: Text("Stats Screen", style: TextStyle(color: Colors.white))),   // 3: Placeholder
-    const Center(child: Text("Settings Screen", style: TextStyle(color: Colors.white))),// 4: Placeholder
+    const Center(child: Text("Stats Screen", style: TextStyle(color: Colors.white))),   // 2: Stats (was index 3)
+    const SettingsScreen(),       // 3: Settings (was index 4)
   ];
 
   void _onItemTapped(int index) {
-    if (index == 2) return; // Middle button is handled by FAB
+    // Map navigation bar indices to screen indices
+    // Nav bar: Home(0), Reports(1), [FAB], Stats(2), Settings(3)
+    // Screens: Home(0), Reports(1), Stats(2), Settings(3)
+    
+    int screenIndex;
+    if (index < 2) {
+      screenIndex = index; // Home or Reports
+    } else {
+      screenIndex = index; // Stats or Settings (already adjusted)
+    }
+    
     setState(() {
-      _currentIndex = index;
+      _currentIndex = screenIndex;
     });
   }
 
@@ -37,7 +47,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     return Scaffold(
       backgroundColor: arcaneBg,
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       
       // The Floating "Add Report" Button
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -78,8 +91,8 @@ class _MainScaffoldState extends State<MainScaffold> {
             _buildNavItem(Icons.home_filled, "Home", 0, neonCyan, mutedText),
             _buildNavItem(Icons.description_outlined, "Reports", 1, neonCyan, mutedText),
             const SizedBox(width: 48), // Spacing for the center FAB
-            _buildNavItem(Icons.bar_chart_rounded, "Stats", 3, neonCyan, mutedText),
-            _buildNavItem(Icons.settings_outlined, "Settings", 4, neonCyan, mutedText),
+            _buildNavItem(Icons.bar_chart_rounded, "Stats", 2, neonCyan, mutedText),
+            _buildNavItem(Icons.settings_outlined, "Settings", 3, neonCyan, mutedText),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'settings_screen.dart'; // Add this import
+import 'stats_screen.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -14,11 +15,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   // List of screens for navigation
   final List<Widget> _screens = [
-    const DashboardScreen(),      // 0: Home
-    const Center(child: Text("Reports Screen", style: TextStyle(color: Colors.white))), // 1: Placeholder
-    const Center(child: Text("Stats Screen", style: TextStyle(color: Colors.white))),   // 2: Stats (was index 3)
-    const SettingsScreen(),       // 3: Settings (was index 4)
-  ];
+  const DashboardScreen(),      // 0: Home
+  const Center(child: Text("Reports Screen", style: TextStyle(color: Colors.white))), // 1: Reports
+  const StatsScreen(),          // 2: Stats
+  const SettingsScreen(),       // 3: Settings
+];
 
   void _onItemTapped(int index) {
     // Map navigation bar indices to screen indices
@@ -88,11 +89,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(Icons.home_filled, "Home", 0, neonCyan, mutedText),
-            _buildNavItem(Icons.description_outlined, "Reports", 1, neonCyan, mutedText),
-            const SizedBox(width: 48), // Spacing for the center FAB
-            _buildNavItem(Icons.bar_chart_rounded, "Stats", 2, neonCyan, mutedText),
-            _buildNavItem(Icons.settings_outlined, "Settings", 3, neonCyan, mutedText),
+           _buildNavItem(Icons.home_filled, "Home", 0, neonCyan, mutedText),
+    _buildNavItem(Icons.description_outlined, "Reports", 1, neonCyan, mutedText),
+    const SizedBox(width: 48), // Spacing for the center FAB
+    _buildNavItem(Icons.bar_chart_rounded, "Stats", 2, neonCyan, mutedText),     // ✅ CORRECT
+    _buildNavItem(Icons.settings_outlined, "Settings", 3, neonCyan, mutedText),  // ✅ CORRECT
           ],
         ),
       ),

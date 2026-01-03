@@ -14,7 +14,7 @@ class GeminiService {
 
   GeminiService() {
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash', // Flash is faster/cheaper for text extraction
+      model: 'gemini-3-flash-preview', // Flash is faster/cheaper for text extraction
       apiKey: _apiKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json', // Force JSON output

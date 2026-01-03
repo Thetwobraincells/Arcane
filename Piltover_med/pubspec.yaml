@@ -27,6 +27,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Assets
+  assets:
+    - assets/images/
+
   # Optional: Add custom fonts for enhanced Arcane feel
   # fonts:
   #   - family: Cinzel

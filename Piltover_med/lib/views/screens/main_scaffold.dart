@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
-import 'settings_screen.dart'; // Add this import
+import 'reports_screen.dart';
+import 'settings_screen.dart';
 import 'stats_screen.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -16,9 +17,9 @@ class _MainScaffoldState extends State<MainScaffold> {
   // List of screens for navigation
   final List<Widget> _screens = [
   const DashboardScreen(),      // 0: Home
-  const Center(child: Text("Reports Screen", style: TextStyle(color: Colors.white))), // 1: Reports
+  const ReportsScreen(),        // 1: Reports
   const StatsScreen(),          // 2: Stats
-  const SettingsScreen(),       // 3: Settings
+  const SettingsScreen(),        // 3: Settings
 ];
 
   void _onItemTapped(int index) {

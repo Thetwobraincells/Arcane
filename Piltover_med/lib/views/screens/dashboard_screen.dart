@@ -1,110 +1,188 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../controllers/report_controller.dart';
-import '../widgets/hextech_header.dart';
-import '../widgets/stat_metric_card.dart';
-import '../widgets/test_result_card.dart';
-import '../../utils/constants.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ReportController>().loadSampleData();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Colors from your palette
+    final Color neonCyan = const Color(0xFF00F0FF);
+    final Color textGray = const Color(0xFF94A3B8);
+
     return Scaffold(
+      backgroundColor: Colors.transparent, // Handled by MainScaffold
       body: SafeArea(
-        child: Consumer<ReportController>(
-          builder: (context, controller, child) {
-            if (controller.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(AppConstants.hextechBlue),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 1. The Glowing Orb Container
+              Container(
+                height: 280,
+                width: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF0A1E3A),
+                  boxShadow: [
+                    BoxShadow(
+                      color: neonCyan.withOpacity(0.2),
+                      blurRadius: 40,
+                      spreadRadius: 10,
+                    ),
+                  ],
                 ),
-              );
-            }
-
-            final reports = controller.reports;
-            final totalTests = reports.fold<int>(
-              0,
-              (sum, report) => sum + report.testResults.length,
-            );
-            final criticalResults = reports
-                .expand((r) => r.testResults)
-                .where((t) => t.status == 'critical' || t.status == 'high')
-                .length;
-
-            return CustomScrollView(
-              slivers: [
-                const SliverToBoxAdapter(
-                  child: HextechHeader(),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // --- CHANGED: Using your Asset Image here ---
+                    ClipOval(
+                      child: Image.asset(
+                        "assets/images/hexcore.png", // <--- YOUR FILE
+                        height: 260, // Slightly smaller than container to fit inside
+                        width: 260,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback to Icon if image fails to load
+                          return Icon(
+                            Icons.medical_services,
+                            size: 100,
+                            color: neonCyan.withOpacity(0.5),
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    // The "Verified" Badge (stays on top)
+                    Positioned(
+                      bottom: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A),
+                          border: Border.all(color: neonCyan.withOpacity(0.5)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified, color: neonCyan, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Verified",
+                              style: TextStyle(color: neonCyan, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: StatMetricCard(
-                            title: 'Total Reports',
-                            value: reports.length.toString(),
-                            icon: Icons.description,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: StatMetricCard(
-                            title: 'Total Tests',
-                            value: totalTests.toString(),
-                            icon: Icons.science,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: StatMetricCard(
-                            title: 'Alerts',
-                            value: criticalResults.toString(),
-                            icon: Icons.warning,
-                            isAlert: criticalResults > 0,
-                          ),
-                        ),
-                      ],
+              ),
+              
+              const Spacer(),
+
+              // 2. Headlines
+              Text(
+                "Decode Your",
+                style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                "Medical Reports",
+                style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: neonCyan,
+                  shadows: [
+                    Shadow(
+                      color: neonCyan.withOpacity(0.6),
+                      blurRadius: 20,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "AI-powered explanations. Clear insights.\nNo medical jargon.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  color: textGray,
+                  height: 1.5,
+                ),
+              ),
+
+              const Spacer(),
+
+              // 3. Upload Button
+              Container(
+                width: double.infinity,
+                height: 56,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: neonCyan.withOpacity(0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Trigger Upload Logic
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    side: BorderSide(color: neonCyan),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final report = reports[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: TestResultCard(report: report),
-                        );
-                      },
-                      childCount: reports.length,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.upload_file, color: neonCyan),
+                      const SizedBox(width: 12),
+                      Text(
+                        "UPLOAD REPORT",
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            );
-          },
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // 4. Security Footer
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_outline, size: 14, color: textGray),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Encrypted & Secure HIPAA Compliant",
+                    style: TextStyle(color: textGray, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-

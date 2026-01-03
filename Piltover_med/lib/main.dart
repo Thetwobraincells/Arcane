@@ -23,7 +23,7 @@ class ArcaneMedicalApp extends StatelessWidget {
         title: 'Arcane Medical Dashboard',
         debugShowCheckedModeBanner: false,
         theme: ArcaneTheme.lightTheme,
-        home: const MainScaffold(),
+        home: MainScaffold(),
       ),
     );
   }

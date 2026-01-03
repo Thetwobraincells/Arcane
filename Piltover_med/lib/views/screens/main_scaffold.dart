@@ -8,10 +8,10 @@ import '../widgets/upload_modal.dart';
 final GlobalKey<MainScaffoldState> mainScaffoldKey = GlobalKey<MainScaffoldState>();
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key}) : super(key: mainScaffoldKey);
+  MainScaffold() : super(key: mainScaffoldKey);
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  MainScaffoldState createState() => MainScaffoldState();
 }
 
 class MainScaffoldState extends State<MainScaffold> {

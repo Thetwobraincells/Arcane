@@ -4,11 +4,10 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
 import '../secrets.dart';
-// ...
 
 class GeminiService {
   // ⚠️ SECURITY NOTE: In production, do not hardcode keys. Use --dart-define or a backend proxy.
-  static const String _apiKey = 'AIzaSyC55Y0HNPagmyrDJY-e0wi7vywfdaZRvjY';
+  static const String _apiKey = Secrets.geminiApiKey;
   
   late final GenerativeModel _model;
 
@@ -35,19 +34,25 @@ class GeminiService {
           "patientName": "String",
           "patientId": "String (or 'Unknown')",
           "reportDate": "ISO-8601 Date String",
-          "notes": "Short summary of the report's overall finding",
+          "notes": "A simplified, easy-to-understand summary of the report in plain language without medical jargon. Explain what the results mean in simple terms that a non-medical person can understand. Highlight any concerns or good news. Write 2-3 sentences maximum.",
           "testResults": [
             {
               "testName": "String",
               "value": "String",
               "unit": "String",
               "status": "String (must be exactly one of: 'normal', 'high', 'low', 'critical')",
-              "date": "ISO-8601 Date String"
+              "date": "ISO-8601 Date String",
+              "simpleExplanation": "A brief, jargon-free explanation of what this test result means in simple terms. Explain what the test measures and what the result indicates in everyday language. 1-2 sentences maximum."
             }
           ]
         }
         
-        If a value is missing, use "N/A". Ensure numeric values are cleaned of text.
+        IMPORTANT INSTRUCTIONS:
+        - Write the "notes" field in plain, everyday language that anyone can understand
+        - Avoid medical terminology - use simple explanations like "your blood sugar is good" instead of "glucose levels are within normal parameters"
+        - For each test result, include a "simpleExplanation" that explains what the result means in non-medical terms
+        - If a value is missing, use "N/A". Ensure numeric values are cleaned of text.
+        - Make explanations friendly and reassuring when results are normal, and clear but not alarming when there are concerns
       '''),
       DataPart('image/jpeg', imageBytes), // Supports png/jpeg/webp
     ]);

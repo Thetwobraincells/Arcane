@@ -84,6 +84,55 @@ class TestResultCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            // Display simplified report summary if available
+            if (report.notes != null && report.notes!.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(AppConstants.hextechBlue).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(AppConstants.hextechBlue).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: const Color(AppConstants.hextechBlue),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'What This Means:',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(AppConstants.hextechBlue),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            report.notes!,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: Colors.white70,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             const Divider(color: Color(0xFF2A2F4A)),
             const SizedBox(height: 16),
             ...report.testResults.map((test) => Padding(
@@ -110,6 +159,19 @@ class TestResultCard extends StatelessWidget {
                                 color: Colors.white70,
                               ),
                             ),
+                            // Display simple explanation if available
+                            if (test.simpleExplanation != null && test.simpleExplanation!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                test.simpleExplanation!,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.white60,
+                                  fontStyle: FontStyle.italic,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),

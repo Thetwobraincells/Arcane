@@ -93,7 +93,7 @@ class MainScaffoldState extends State<MainScaffold> {
             _buildNavItem(Icons.home_filled, "Home", 0, neonCyan, mutedText),
             _buildNavItem(Icons.description_outlined, "Reports", 1, neonCyan, mutedText),
             const SizedBox(width: 48), // Spacing for the center FAB
-            _buildNavItem(Icons.bar_chart_rounded, "Stats", 2, neonCyan, mutedText),
+            _buildNavItem(Icons.menu_book, "Dictionary", 2, neonCyan, mutedText),
             _buildNavItem(Icons.settings_outlined, "Settings", 3, neonCyan, mutedText),
           ],
         ),

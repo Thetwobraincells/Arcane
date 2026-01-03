@@ -1,767 +1,359 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../controllers/report_controller.dart';
-import '../../utils/constants.dart';
-import '../widgets/glowing_card.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class StatsScreen extends StatelessWidget {
-  const StatsScreen({super.key});
+class DictionaryScreen extends StatefulWidget {
+  const DictionaryScreen({super.key});
+
+  @override
+  State<DictionaryScreen> createState() => _DictionaryScreenState();
+}
+
+class _DictionaryScreenState extends State<DictionaryScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final Color neonCyan = const Color(0xFF00F0FF);
+  
+  // Mock Data - The "Arcane Knowledge"
+  final List<Map<String, String>> _allTerms = [
+    {
+      "term": "Hemoglobin",
+      "meaning": "The protein in red blood cells that carries oxygen.",
+      "adults": "Men: 13.5-17.5 g/dL | Women: 12.0-15.5 g/dL",
+      "children": "Varies by age: 11-13 g/dL (6-12 years) | 12-14 g/dL (12-18 years)",
+      "elderly": "May be slightly lower: 12.0-16.0 g/dL"
+    },
+    {
+      "term": "Lipid Panel",
+      "meaning": "A group of tests that measure fats (cholesterol) in your blood.",
+      "adults": "Total Cholesterol: <200 mg/dL | HDL: >40 mg/dL (men), >50 mg/dL (women) | LDL: <100 mg/dL",
+      "children": "Total Cholesterol: <170 mg/dL | LDL: <110 mg/dL",
+      "elderly": "Similar to adults, but may have slightly higher acceptable ranges"
+    },
+    {
+      "term": "Glucose",
+      "meaning": "The main type of sugar in the blood and the major source of energy for the body's cells.",
+      "adults": "Fasting: 70-100 mg/dL | Random: <140 mg/dL",
+      "children": "Fasting: 70-100 mg/dL | Similar to adults",
+      "elderly": "Fasting: 70-110 mg/dL | May be slightly higher"
+    },
+    {
+      "term": "Platelets",
+      "meaning": "Tiny blood cells that help your body form clots to stop bleeding.",
+      "adults": "150,000-450,000 per microliter",
+      "children": "150,000-450,000 per microliter",
+      "elderly": "150,000-450,000 per microliter"
+    },
+    {
+      "term": "Creatinine",
+      "meaning": "A waste product that comes from normal wear and tear on muscles of the body, filtered by kidneys.",
+      "adults": "Men: 0.7-1.3 mg/dL | Women: 0.6-1.1 mg/dL",
+      "children": "0.3-0.7 mg/dL (varies with age and muscle mass)",
+      "elderly": "May be slightly higher: 0.8-1.5 mg/dL"
+    },
+    {
+      "term": "TSH",
+      "meaning": "Thyroid Stimulating Hormone. It controls how your thyroid works.",
+      "adults": "0.4-4.0 mIU/L",
+      "children": "Varies by age: 0.7-6.4 mIU/L (newborns) | 0.7-5.0 mIU/L (children)",
+      "elderly": "0.4-5.0 mIU/L (may be slightly higher)"
+    },
+    {
+      "term": "HDL",
+      "meaning": "High-Density Lipoprotein, often called 'good cholesterol' that helps remove bad cholesterol from your arteries.",
+      "adults": "Men: >40 mg/dL | Women: >50 mg/dL (higher is better)",
+      "children": ">40 mg/dL",
+      "elderly": ">40 mg/dL (men), >50 mg/dL (women)"
+    },
+    {
+      "term": "LDL",
+      "meaning": "Low-Density Lipoprotein, often called 'bad cholesterol' that can build up in arteries.",
+      "adults": "Optimal: <100 mg/dL | Near optimal: 100-129 mg/dL | Borderline: 130-159 mg/dL",
+      "children": "<110 mg/dL",
+      "elderly": "<100 mg/dL (optimal) | <130 mg/dL (acceptable)"
+    },
+    {
+      "term": "WBC",
+      "meaning": "White Blood Cell count. These cells help fight infections in your body.",
+      "adults": "4,500-11,000 per microliter",
+      "children": "5,000-15,000 per microliter (higher in infants)",
+      "elderly": "4,000-10,000 per microliter (may be slightly lower)"
+    },
+    {
+      "term": "RBC",
+      "meaning": "Red Blood Cell count. These cells carry oxygen throughout your body.",
+      "adults": "Men: 4.5-5.9 million/μL | Women: 4.1-5.1 million/μL",
+      "children": "Varies by age: 4.0-5.5 million/μL",
+      "elderly": "May be slightly lower: 4.0-5.0 million/μL"
+    },
+    {
+      "term": "Hemoglobin A1C",
+      "meaning": "A test that shows your average blood sugar level over the past 2-3 months.",
+      "adults": "Normal: <5.7% | Prediabetes: 5.7-6.4% | Diabetes: ≥6.5%",
+      "children": "Normal: <5.7% | Similar to adults",
+      "elderly": "Normal: <5.7% | May target <7.0% if other health issues"
+    },
+    {
+      "term": "Blood Pressure",
+      "meaning": "The force of blood pushing against the walls of your arteries as your heart pumps.",
+      "adults": "Normal: <120/80 mmHg | Elevated: 120-129/<80 | High: ≥130/80",
+      "children": "Varies by age, height, and gender (percentile-based)",
+      "elderly": "May be slightly higher: <130/80 mmHg (acceptable)"
+    },
+    {
+      "term": "BMI",
+      "meaning": "Body Mass Index, a measure of body fat based on height and weight.",
+      "adults": "Normal: 18.5-24.9 | Overweight: 25-29.9 | Obese: ≥30",
+      "children": "Uses percentile charts (age and gender specific)",
+      "elderly": "Normal: 23-28 (slightly higher range acceptable)"
+    },
+    {
+      "term": "Vitamin D",
+      "meaning": "A vitamin that helps your body absorb calcium and maintain strong bones.",
+      "adults": "30-100 ng/mL (optimal: 40-60 ng/mL)",
+      "children": "30-100 ng/mL",
+      "elderly": "30-100 ng/mL (may need supplementation)"
+    },
+    {
+      "term": "B12",
+      "meaning": "A vitamin essential for nerve function and the production of red blood cells.",
+      "adults": "200-900 pg/mL (optimal: >300 pg/mL)",
+      "children": "200-900 pg/mL",
+      "elderly": "200-900 pg/mL (may need supplementation)"
+    },
+    {
+      "term": "Iron",
+      "meaning": "A mineral needed to make hemoglobin, which carries oxygen in your blood.",
+      "adults": "Men: 65-175 μg/dL | Women: 50-170 μg/dL",
+      "children": "50-120 μg/dL",
+      "elderly": "50-150 μg/dL"
+    },
+    {
+      "term": "Sodium",
+      "meaning": "A mineral that helps control fluid balance in your body, but too much can raise blood pressure.",
+      "adults": "136-145 mEq/L",
+      "children": "136-145 mEq/L",
+      "elderly": "136-145 mEq/L (may be slightly lower)"
+    },
+    {
+      "term": "Potassium",
+      "meaning": "A mineral that helps your muscles and nerves work properly.",
+      "adults": "3.5-5.0 mEq/L",
+      "children": "3.5-5.0 mEq/L",
+      "elderly": "3.5-5.0 mEq/L (monitor closely)"
+    },
+    {
+      "term": "Calcium",
+      "meaning": "A mineral that builds strong bones and teeth, and helps muscles and nerves function.",
+      "adults": "8.5-10.5 mg/dL",
+      "children": "8.8-10.8 mg/dL (slightly higher)",
+      "elderly": "8.5-10.5 mg/dL (may need supplementation)"
+    },
+    {
+      "term": "Triglycerides",
+      "meaning": "A type of fat in your blood that can increase heart disease risk if too high.",
+      "adults": "Normal: <150 mg/dL | Borderline: 150-199 mg/dL | High: ≥200 mg/dL",
+      "children": "<90 mg/dL (optimal)",
+      "elderly": "<150 mg/dL (similar to adults)"
+    },
+  ];
+
+  List<Map<String, String>> _filteredTerms = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredTerms = _allTerms;
+  }
+
+  void _filterSearch(String query) {
+    setState(() {
+      _filteredTerms = _allTerms
+          .where((item) => item["term"]!.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent, // Handled by MainScaffold
       body: SafeArea(
-        child: Consumer<ReportController>(
-          builder: (context, controller, child) {
-            if (controller.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(AppConstants.hextechBlue),
-                ),
-              );
-            }
-
-            final reports = controller.reports;
-            
-            if (reports.isEmpty) {
-              return _buildEmptyState();
-            }
-
-            // Calculate statistics
-            final stats = _calculateStats(reports);
-
-            return CustomScrollView(
-              slivers: [
-                // Header Section
-                SliverToBoxAdapter(
-                  child: _buildHeader(stats),
-                ),
-
-                // Overview Cards
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildOverviewCards(stats),
-                  ),
-                ),
-
-                // Status Distribution
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildStatusDistribution(stats),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                // Trend Indicators
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildTrendSection(stats),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                // Recent Activity Timeline
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildRecentActivity(reports),
-                  ),
-                ),
-
-                // Disclaimer
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildDisclaimer(),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 80)),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Map<String, dynamic> _calculateStats(reports) {
-    int totalTests = 0;
-    int normalCount = 0;
-    int highCount = 0;
-    int lowCount = 0;
-    int criticalCount = 0;
-
-    for (var report in reports) {
-      totalTests = totalTests + (report.testResults.length as int);
-      for (var test in report.testResults) {
-        switch (test.status.toLowerCase()) {
-          case 'normal':
-            normalCount++;
-            break;
-          case 'high':
-            highCount++;
-            break;
-          case 'low':
-            lowCount++;
-            break;
-          case 'critical':
-            criticalCount++;
-            break;
-        }
-      }
-    }
-
-    final abnormalCount = highCount + lowCount + criticalCount;
-    final normalPercentage = totalTests > 0 ? (normalCount / totalTests * 100) : 0;
-    final abnormalPercentage = totalTests > 0 ? (abnormalCount / totalTests * 100) : 0;
-
-    return {
-      'totalReports': reports.length,
-      'totalTests': totalTests,
-      'normalCount': normalCount,
-      'highCount': highCount,
-      'lowCount': lowCount,
-      'criticalCount': criticalCount,
-      'abnormalCount': abnormalCount,
-      'normalPercentage': normalPercentage,
-      'abnormalPercentage': abnormalPercentage,
-    };
-  }
-
-  Widget _buildHeader(Map<String, dynamic> stats) {
-    return Container(
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(AppConstants.hextechBlue).withOpacity(0.1),
-            const Color(AppConstants.arcanePurple).withOpacity(0.05),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1F3A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(AppConstants.hextechBlue).withOpacity(0.3),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(AppConstants.hextechBlue).withOpacity(0.2),
-                      blurRadius: 12,
-                      spreadRadius: -2,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.analytics_outlined,
-                  color: Color(AppConstants.hextechBlue),
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Health Analytics',
-                      style: GoogleFonts.inter(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: const Color(AppConstants.hextechBlue).withOpacity(0.5),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Insights from ${stats['totalReports']} uploaded reports',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOverviewCards(Map<String, dynamic> stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildMetricCard(
-            title: 'Total Tests',
-            value: stats['totalTests'].toString(),
-            icon: Icons.science_outlined,
-            color: const Color(AppConstants.hextechBlue),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildMetricCard(
-            title: 'Normal',
-            value: stats['normalCount'].toString(),
-            icon: Icons.check_circle_outline,
-            color: const Color(0xFF10B981), // Green
-            subtitle: '${stats['normalPercentage'].toStringAsFixed(0)}%',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildMetricCard(
-            title: 'Alerts',
-            value: stats['abnormalCount'].toString(),
-            icon: Icons.warning_amber_outlined,
-            color: const Color(AppConstants.hextechGold),
-            subtitle: '${stats['abnormalPercentage'].toStringAsFixed(0)}%',
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    String? subtitle,
-  }) {
-    return GlowingCard(
-      glowColor: color,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.white70,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
+              // 1. Header
               Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: color.withOpacity(0.7),
-                  fontWeight: FontWeight.w600,
+                "Medical Codex",
+                style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(color: neonCyan.withOpacity(0.5), blurRadius: 15),
+                  ],
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusDistribution(Map<String, dynamic> stats) {
-    return GlowingCard(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.pie_chart_outline,
-                  color: Color(AppConstants.hextechBlue),
-                  size: 20,
+              const SizedBox(height: 20),
+              // 2. Search Bar (Hextech Style)
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A202C),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: neonCyan.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Test Status Distribution',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(AppConstants.hextechBlue),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _filterSearch,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: "Search terminology...",
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                    prefixIcon: Icon(Icons.search, color: neonCyan),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildStatusBar(
-              'Normal',
-              stats['normalCount'],
-              stats['totalTests'],
-              const Color(0xFF10B981),
-            ),
-            const SizedBox(height: 12),
-            _buildStatusBar(
-              'High',
-              stats['highCount'],
-              stats['totalTests'],
-              const Color(AppConstants.hextechGold),
-            ),
-            const SizedBox(height: 12),
-            _buildStatusBar(
-              'Low',
-              stats['lowCount'],
-              stats['totalTests'],
-              const Color(0xFF8B5CF6), // Purple
-            ),
-            const SizedBox(height: 12),
-            _buildStatusBar(
-              'Critical',
-              stats['criticalCount'],
-              stats['totalTests'],
-              const Color(0xFFEF4444), // Red (soft)
-            ),
-          ],
+              ),
+              const SizedBox(height: 20),
+              // 3. The List
+              Expanded(
+                child: _filteredTerms.isEmpty
+                    ? Center(
+                        child: Text(
+                          "No terms found",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 16,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _filteredTerms.length,
+                        itemBuilder: (context, index) {
+                          final term = _filteredTerms[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D1218),
+                              border: Border.all(color: const Color(0xFF1E293B)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                              child: ExpansionTile(
+                                collapsedIconColor: neonCyan,
+                                iconColor: neonCyan,
+                                title: Text(
+                                  term["term"]!,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                children: [
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: neonCyan.withOpacity(0.05),
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(12),
+                                        bottomRight: Radius.circular(12),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Description
+                                        Text(
+                                          term["meaning"]!,
+                                          style: const TextStyle(
+                                            color: Color(0xFF94A3B8), 
+                                            fontSize: 14,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Normal Values Section
+                                        Text(
+                                          "Normal Values:",
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: neonCyan,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        if (term["adults"] != null) ...[
+                                          _buildNormalValueRow("Adults", term["adults"]!),
+                                          const SizedBox(height: 6),
+                                        ],
+                                        if (term["children"] != null) ...[
+                                          _buildNormalValueRow("Children", term["children"]!),
+                                          const SizedBox(height: 6),
+                                        ],
+                                        if (term["elderly"] != null) ...[
+                                          _buildNormalValueRow("Elderly (65+)", term["elderly"]!),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusBar(String label, int count, int total, Color color) {
-    final percentage = total > 0 ? (count / total) : 0.0;
-    
-    return Column(
+  Widget _buildNormalValueRow(String label, String value) {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withOpacity(0.5),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+        SizedBox(
+          width: 90,
+          child: Text(
+            "$label:",
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white70,
             ),
-            Text(
-              '$count (${(percentage * 100).toStringAsFixed(0)}%)',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: Colors.white70,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          height: 8,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(4),
           ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: percentage,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color,
-                    color.withOpacity(0.7),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(4),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 12,
+              height: 1.4,
             ),
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildTrendSection(Map<String, dynamic> stats) {
-    return GlowingCard(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.trending_up,
-                  color: Color(AppConstants.hextechBlue),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Health Overview',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(AppConstants.hextechBlue),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildTrendIndicator(
-              'Overall Health Score',
-              stats['normalPercentage'],
-              stats['normalPercentage'] >= 80 ? 'Excellent' : stats['normalPercentage'] >= 60 ? 'Good' : 'Needs Attention',
-              stats['normalPercentage'] >= 80 ? const Color(0xFF10B981) : stats['normalPercentage'] >= 60 ? const Color(AppConstants.hextechBlue) : const Color(AppConstants.hextechGold),
-            ),
-            const SizedBox(height: 16),
-            _buildInsightCard(
-              icon: Icons.lightbulb_outline,
-              title: 'AI Insight',
-              message: stats['abnormalCount'] == 0
-                  ? 'All test results are within normal ranges. Keep up the good health practices!'
-                  : stats['criticalCount'] > 0
-                      ? 'Some critical values detected. Please consult your healthcare provider immediately.'
-                      : 'Some values are outside normal range. Monitor these closely and discuss with your doctor.',
-              color: stats['criticalCount'] > 0
-                  ? const Color(0xFFEF4444)
-                  : stats['abnormalCount'] > 0
-                      ? const Color(AppConstants.hextechGold)
-                      : const Color(0xFF10B981),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrendIndicator(String label, double percentage, String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      '${percentage.toStringAsFixed(0)}%',
-                      style: GoogleFonts.inter(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            percentage >= 80 ? Icons.check_circle : Icons.info_outline,
-            color: color,
-            size: 32,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInsightCard({
-    required IconData icon,
-    required String title,
-    required String message,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: Colors.white70,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentActivity(reports) {
-    final recentReports = reports.take(3).toList();
-    
-    return GlowingCard(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.history,
-                  color: Color(AppConstants.hextechBlue),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Recent Activity',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(AppConstants.hextechBlue),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...recentReports.map((report) => _buildActivityItem(report)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(report) {
-    final daysAgo = DateTime.now().difference(report.reportDate).inDays;
-    final timeText = daysAgo == 0 ? 'Today' : daysAgo == 1 ? 'Yesterday' : '$daysAgo days ago';
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(AppConstants.hextechBlue).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(AppConstants.hextechBlue).withOpacity(0.3),
-              ),
-            ),
-            child: const Icon(
-              Icons.insert_drive_file_outlined,
-              color: Color(AppConstants.hextechBlue),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Lab Report - ${report.patientName}',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${report.testResults.length} tests • $timeText',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDisclaimer() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(AppConstants.hextechGold).withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(AppConstants.hextechGold).withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.info_outline,
-            color: Color(AppConstants.hextechGold),
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'These statistics are AI-generated insights based on your uploaded reports. '
-              'They are not medical advice. Always consult with qualified healthcare providers '
-              'for medical decisions and treatment.',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.white.withOpacity(0.7),
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.analytics_outlined,
-              size: 80,
-              color: const Color(AppConstants.hextechBlue).withOpacity(0.3),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No Data Available',
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: const Color(AppConstants.hextechBlue),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Upload medical reports to view health analytics and insights',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+// Keep the old class name for backward compatibility
+class StatsScreen extends DictionaryScreen {
+  const StatsScreen({super.key});
 }

@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
 import '../services/gemini_service.dart';
+import '../views/screens/main_scaffold.dart';
+import 'package:flutter/material.dart';
 
 class ReportController extends ChangeNotifier {
   List<LabReport> _reports = [];
@@ -15,46 +17,43 @@ class ReportController extends ChangeNotifier {
   List<LabReport> get reports => _reports;
   bool get isLoading => _isLoading;
 
-  /// NEW: Picks an image, sends it to Gemini, and adds the result to the list
-  Future<void> uploadAndAnalyzeReport() async {
-    try {
-      // 1. Open the File Picker
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'png', 'jpeg'],
-      );
+  Future<void> analyzeFile(File imageFile, BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
 
-      // 2. Check if user actually selected a file
-      if (result != null && result.files.single.path != null) {
-        
-        // Start Loading (shows spinner in UI)
-        _isLoading = true;
-        notifyListeners();
+  try {
+      // 1. Call AI Service
+      LabReport newReport = await _aiService.analyzeImage(imageFile);
 
-        File imageFile = File(result.files.single.path!);
+      // 2. Add to List
+      _reports.insert(0, newReport);
 
-        try {
-          // 3. Send file to Gemini Service for analysis
-          LabReport newReport = await _aiService.analyzeImage(imageFile);
-
-          // 4. Add the new report to the TOP of the list
-          _reports.insert(0, newReport);
-          
-        } catch (e) {
-          // Handle AI or Parsing errors
-          print("Error during AI Analysis: $e");
-          // Optional: You could add an error message variable here to show in the UI
-        }
-
-        // Stop Loading
-        _isLoading = false;
-        notifyListeners();
-      } else {
-        // User canceled the picker
-        print("User canceled file picking");
+      // 3. Success Feedback
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Analysis Complete!"),
+            backgroundColor: Color(0xFF00D4FF), // Hextech Blue
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
+
+      // 4. Navigation Magic (Switch to Reports Tab)
+      mainScaffoldKey.currentState?.goToTab(1);
+
     } catch (e) {
-      print("General Error: $e");
+      print("AI Error: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Analysis Failed: ${e.toString().split(':').last.trim()}"),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
       _isLoading = false;
       notifyListeners();
     }

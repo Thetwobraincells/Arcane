@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/upload_modal.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -120,7 +121,7 @@ class DashboardScreen extends StatelessWidget {
 
               const Spacer(),
 
-              // 3. Upload Button
+              // 3. Upload Button - NOW TRIGGERS UNIFIED UPLOAD MODAL
               Container(
                 width: double.infinity,
                 height: 56,
@@ -136,7 +137,8 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 child: ElevatedButton(
                   onPressed: () {
-                    // Trigger Upload Logic
+                    // ✅ UNIFIED UPLOAD TRIGGER
+                    showUploadModal(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F172A),

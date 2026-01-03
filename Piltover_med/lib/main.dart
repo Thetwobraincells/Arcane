@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/report_controller.dart';
+import 'controllers/upload_controller.dart'; // ✅ NEW
 import 'theme/arcane_theme.dart';
 import 'views/screens/main_scaffold.dart';
 
@@ -13,17 +14,16 @@ class ArcaneMedicalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ReportController(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ReportController()),
+        ChangeNotifierProvider(create: (_) => UploadController()), // ✅ NEW
+      ],
       child: MaterialApp(
         title: 'Arcane Medical Dashboard',
         debugShowCheckedModeBanner: false,
-        
-        // Ensure this theme defines the dark colors for the full effect
-        theme: ArcaneTheme.lightTheme, 
-        
-        // This is the key change: Load the Scaffold with Nav Bar first
-        home: MainScaffold(), 
+        theme: ArcaneTheme.lightTheme,
+        home: const MainScaffold(),
       ),
     );
   }

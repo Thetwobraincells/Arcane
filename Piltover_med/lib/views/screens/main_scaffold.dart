@@ -3,6 +3,7 @@ import 'dashboard_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
 import 'stats_screen.dart';
+import '../widgets/upload_modal.dart'; // ✅ ADD THIS IMPORT
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -16,35 +17,29 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   // List of screens for navigation
   final List<Widget> _screens = [
-  const DashboardScreen(),      // 0: Home
-  const ReportsScreen(),        // 1: Reports
-  const StatsScreen(),          // 2: Stats
-  const SettingsScreen(),        // 3: Settings
-];
+    const DashboardScreen(),   // 0: Home
+    const ReportsScreen(),     // 1: Reports
+    const StatsScreen(),       // 2: Stats
+    const SettingsScreen(),    // 3: Settings
+  ];
 
   void _onItemTapped(int index) {
-    // Map navigation bar indices to screen indices
-    // Nav bar: Home(0), Reports(1), [FAB], Stats(2), Settings(3)
-    // Screens: Home(0), Reports(1), Stats(2), Settings(3)
-    
-    int screenIndex;
-    if (index < 2) {
-      screenIndex = index; // Home or Reports
-    } else {
-      screenIndex = index; // Stats or Settings (already adjusted)
-    }
-    
     setState(() {
-      _currentIndex = screenIndex;
+      _currentIndex = index;
     });
+  }
+
+  // ✅ UNIFIED UPLOAD HANDLER
+  void _handleUploadTap() {
+    showUploadModal(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Arcane Theme Colors (adjust to match your exact hex codes)
-    final Color arcaneBg = const Color(0xFF0D1218); // Dark background
-    final Color cardBg = const Color(0xFF1A202C); // Slightly lighter for nav bar
-    final Color neonCyan = const Color(0xFF00F0FF); // Hextech glow color
+    // Arcane Theme Colors
+    final Color arcaneBg = const Color(0xFF0D1218);
+    final Color cardBg = const Color(0xFF1A202C);
+    final Color neonCyan = const Color(0xFF00F0FF);
     final Color mutedText = const Color(0xFF64748B);
 
     return Scaffold(
@@ -70,10 +65,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () {
-            // Handle Add Report Action
-            print("Add Report Clicked");
-          },
+          onPressed: _handleUploadTap, // ✅ NOW CALLS UPLOAD MODAL
           backgroundColor: const Color(0xFF0F172A),
           shape: CircleBorder(side: BorderSide(color: neonCyan, width: 2)),
           elevation: 0,
@@ -84,24 +76,23 @@ class _MainScaffoldState extends State<MainScaffold> {
       // The Navigation Bar
       bottomNavigationBar: BottomAppBar(
         color: cardBg,
-        shape: const CircularNotchedRectangle(), // Creates the cutout for the FAB
+        shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         height: 80,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-           _buildNavItem(Icons.home_filled, "Home", 0, neonCyan, mutedText),
-    _buildNavItem(Icons.description_outlined, "Reports", 1, neonCyan, mutedText),
-    const SizedBox(width: 48), // Spacing for the center FAB
-    _buildNavItem(Icons.bar_chart_rounded, "Stats", 2, neonCyan, mutedText),     // ✅ CORRECT
-    _buildNavItem(Icons.settings_outlined, "Settings", 3, neonCyan, mutedText),  // ✅ CORRECT
+            _buildNavItem(Icons.home_filled, "Home", 0, neonCyan, mutedText),
+            _buildNavItem(Icons.description_outlined, "Reports", 1, neonCyan, mutedText),
+            const SizedBox(width: 48), // Spacing for the center FAB
+            _buildNavItem(Icons.bar_chart_rounded, "Stats", 2, neonCyan, mutedText),
+            _buildNavItem(Icons.settings_outlined, "Settings", 3, neonCyan, mutedText),
           ],
         ),
       ),
     );
   }
 
-  // Helper widget to build a navigation item with "Glow" effect
   Widget _buildNavItem(IconData icon, String label, int index, Color activeColor, Color inactiveColor) {
     final bool isSelected = _currentIndex == index;
 
@@ -112,7 +103,6 @@ class _MainScaffoldState extends State<MainScaffold> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Glowing Icon Effect
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: isSelected

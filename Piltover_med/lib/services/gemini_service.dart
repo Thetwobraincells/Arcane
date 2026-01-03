@@ -7,7 +7,7 @@ import '../secrets.dart';
 
 class GeminiService {
   // ⚠️ SECURITY NOTE: In production, do not hardcode keys. Use --dart-define or a backend proxy.
-  static const String _apiKey = Secrets.geminiApiKey;
+  static const String _apiKey = myGeminiKey;
   
   late final GenerativeModel _model;
 

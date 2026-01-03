@@ -441,41 +441,22 @@ class _UploadModalState extends State<UploadModal> {
     });
 
     try {
-      final uploadController = context.read<UploadController>();
+      // 1. Get the Controller
       final reportController = context.read<ReportController>();
 
-      // Create mock report with processing status
-      final mockReport = uploadController.createMockReport(_selectedFile!);
+      // 2. Close the Modal FIRST (so the loading spinner appears on the main screen/button)
+      Navigator.of(context).pop();
 
-      // Add to report controller
-      reportController.addReport(mockReport);
+      // 3. Call the REAL AI Logic
+      // Pass the selected file and context
+      await reportController.analyzeFile(_selectedFile!, context);
 
-      // Simulate processing delay (in real app, this would be AI analysis)
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Close modal
-      if (mounted) {
-        Navigator.of(context).pop();
-
-        // Navigate to Reports screen (index 1 in bottom nav)
-        // This will be handled by the parent scaffold
-      }
-
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Report uploaded successfully! AI analysis in progress...',
-              style: GoogleFonts.inter(),
-            ),
-            backgroundColor: const Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
     } catch (e) {
-      _showError('Failed to process report: ${e.toString()}');
+      // Error handling is done inside the controller now, 
+      // but strictly for the modal closing logic:
+      if (mounted) {
+         _showError('Failed to start analysis: ${e.toString()}');
+      }
     } finally {
       if (mounted) {
         setState(() {

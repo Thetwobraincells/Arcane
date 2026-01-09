@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/report_controller.dart';
-import 'controllers/upload_controller.dart'; // ✅ NEW
+import 'controllers/upload_controller.dart';
 import 'theme/arcane_theme.dart';
 import 'views/screens/main_scaffold.dart';
+import 'services/standards_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_config.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: FirebaseConfig.options,
+  );
   runApp(const ArcaneMedicalApp());
 }
 
@@ -17,10 +25,10 @@ class ArcaneMedicalApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ReportController()),
-        ChangeNotifierProvider(create: (_) => UploadController()), // ✅ NEW
+        ChangeNotifierProvider(create: (_) => UploadController()),
       ],
       child: MaterialApp(
-        title: 'Arcane Medical Dashboard',
+        title: 'Medical Dashboard',
         debugShowCheckedModeBanner: false,
         theme: ArcaneTheme.lightTheme,
         home: MainScaffold(),

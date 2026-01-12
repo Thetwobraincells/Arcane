@@ -1,187 +1,181 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/upload_modal.dart';
-import '../widgets/hover_button.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Colors from your palette
-    final Color neonCyan = const Color(0xFF00F0FF);
-    final Color textGray = const Color(0xFF94A3B8);
-
     return Scaffold(
-      backgroundColor: Colors.transparent, // Handled by MainScaffold
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 1. The Glowing Orb Container
-              Container(
-                height: 280,
-                width: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF0A1E3A),
-                  boxShadow: [
-                    BoxShadow(
-                      color: neonCyan.withOpacity(0.2),
-                      blurRadius: 40,
-                      spreadRadius: 10,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // App Logo / Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.medical_services,
+                        color: Color(0xFF0EA5E9),
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Piltover Medical',
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
+                      ),
                     ),
                   ],
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // --- CHANGED: Using your Asset Image here ---
-                    ClipOval(
+                const SizedBox(height: 48),
+
+                // Main Illustration Area
+                Center(
+                  child: Container(
+                    width: 280,
+                    height: 280,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                          blurRadius: 40,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
                       child: Image.asset(
-                        "assets/images/hexcore.png", // <--- YOUR FILE
-                        height: 260, // Slightly smaller than container to fit inside
-                        width: 260,
+                        "assets/images/hexcore.png",
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          // Fallback to Icon if image fails to load
                           return Icon(
-                            Icons.medical_services,
-                            size: 100,
-                            color: neonCyan.withOpacity(0.5),
+                            Icons.analytics,
+                            size: 120,
+                            color: const Color(0xFF0EA5E9).withOpacity(0.3),
                           );
                         },
                       ),
                     ),
-                    
-                    // The "Verified" Badge (stays on top)
-                    Positioned(
-                      bottom: 20,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          border: Border.all(color: neonCyan.withOpacity(0.5)),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.verified, color: neonCyan, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Verified",
-                              style: TextStyle(color: neonCyan, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const Spacer(),
-
-              // 2. Headlines
-              Text(
-                "Decode Your",
-                style: GoogleFonts.outfit(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                "Medical Reports",
-                style: GoogleFonts.outfit(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: neonCyan,
-                  shadows: [
-                    Shadow(
-                      color: neonCyan.withOpacity(0.6),
-                      blurRadius: 20,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "AI-powered explanations. Clear insights.\nNo medical jargon.",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  color: textGray,
-                  height: 1.5,
-                ),
-              ),
-
-              const Spacer(),
-
-              // 3. Upload Button - NOW TRIGGERS UNIFIED UPLOAD MODAL
-              Container(
-                width: double.infinity,
-                height: 56,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: neonCyan.withOpacity(0.2),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: HoverButton(
-                  onPressed: () {
-                    showUploadModal(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    side: BorderSide(color: neonCyan),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+
+                const SizedBox(height: 48),
+
+                // Headline
+                Center(
+                  child: Column(
                     children: [
-                      Icon(Icons.upload_file, color: neonCyan),
-                      const SizedBox(width: 12),
                       Text(
-                        "UPLOAD REPORT",
-                        style: GoogleFonts.outfit(
+                        'Understand Your',
+                        style: GoogleFonts.inter(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        'Medical Reports',
+                        style: GoogleFonts.inter(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0EA5E9),
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'AI-powered insights in plain language.\nNo medical jargon, just clarity.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
+                          color: const Color(0xFF64748B),
+                          height: 1.5,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // 4. Security Footer
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock_outline, size: 14, color: textGray),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Encrypted & Secure HIPAA Compliant",
-                    style: TextStyle(color: textGray, fontSize: 12),
+
+                const SizedBox(height: 48),
+
+                // Upload Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      showUploadModal(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0EA5E9),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shadowColor: const Color(0xFF0EA5E9).withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.upload_file, size: 22),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Upload Report',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 40),
-            ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Security Footer
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 16,
+                      color: const Color(0xFF64748B).withOpacity(0.7),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Secure & Private • HIPAA Compliant',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF64748B).withOpacity(0.7),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

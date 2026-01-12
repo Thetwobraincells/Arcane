@@ -10,9 +10,8 @@ class DictionaryScreen extends StatefulWidget {
 
 class _DictionaryScreenState extends State<DictionaryScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final Color neonCyan = const Color(0xFF00F0FF);
   
-  // Mock Data - The "Arcane Knowledge" (will be sorted alphabetically in initState)
+  // Medical terms data (keeping your existing data)
   List<Map<String, String>> _allTerms = [
     {
       "term": "B12",
@@ -161,7 +160,6 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   @override
   void initState() {
     super.initState();
-    // Sort terms alphabetically by term name
     _allTerms.sort((a, b) => a["term"]!.compareTo(b["term"]!));
     _filteredTerms = _allTerms;
   }
@@ -171,7 +169,6 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       _filteredTerms = _allTerms
           .where((item) => item["term"]!.toLowerCase().contains(query.toLowerCase()))
           .toList();
-      // Maintain alphabetical order after filtering
       _filteredTerms.sort((a, b) => a["term"]!.compareTo(b["term"]!));
     });
   }
@@ -185,179 +182,226 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // Handled by MainScaffold
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Header
-              Text(
-                "Medical Codex",
-                style: GoogleFonts.outfit(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(color: neonCyan.withOpacity(0.5), blurRadius: 15),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 2. Search Bar (Hextech Style)
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A202C),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: neonCyan.withOpacity(0.3)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _filterSearch,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: "Search terminology...",
-                    hintStyle: TextStyle(color: Colors.grey[600]),
-                    prefixIcon: Icon(Icons.search, color: neonCyan),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 3. The List
-              Expanded(
-                child: _filteredTerms.isEmpty
-                    ? Center(
-                        child: Text(
-                          "No terms found",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 16,
-                          ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(24.0),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: _filteredTerms.length,
-                        itemBuilder: (context, index) {
-                          final term = _filteredTerms[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0D1218),
-                              border: Border.all(color: const Color(0xFF1E293B)),
-                              borderRadius: BorderRadius.circular(12),
+                        child: const Icon(
+                          Icons.menu_book,
+                          color: Color(0xFF0EA5E9),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Medical Dictionary',
+                        style: GoogleFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Search Bar
+                  TextField(
+                    controller: _searchController,
+                    onChanged: _filterSearch,
+                    decoration: InputDecoration(
+                      hintText: 'Search medical terms...',
+                      hintStyle: GoogleFonts.inter(
+                        color: const Color(0xFF94A3B8),
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Color(0xFF64748B),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF0EA5E9),
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Terms List
+            Expanded(
+              child: _filteredTerms.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No terms found',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredTerms.length,
+                      itemBuilder: (context, index) {
+                        final term = _filteredTerms[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(
+                              dividerColor: Colors.transparent,
                             ),
-                            child: Theme(
-                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                              child: ExpansionTile(
-                                collapsedIconColor: neonCyan,
-                                iconColor: neonCyan,
-                                title: Text(
-                                  term["term"]!,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              childrenPadding: const EdgeInsets.all(16),
+                              collapsedIconColor: const Color(0xFF0EA5E9),
+                              iconColor: const Color(0xFF0EA5E9),
+                              title: Text(
+                                term["term"]!,
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Description
+                                      Text(
+                                        term["meaning"]!,
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFF64748B),
+                                          fontSize: 14,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      // Normal Values
+                                      Text(
+                                        'Normal Values',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF0EA5E9),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (term["adults"] != null)
+                                        _buildValueRow('Adults', term["adults"]!),
+                                      if (term["children"] != null)
+                                        _buildValueRow('Children', term["children"]!),
+                                      if (term["elderly"] != null)
+                                        _buildValueRow('Elderly (65+)', term["elderly"]!),
+                                    ],
                                   ),
                                 ),
-                                children: [
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: neonCyan.withOpacity(0.05),
-                                      borderRadius: const BorderRadius.only(
-                                        bottomLeft: Radius.circular(12),
-                                        bottomRight: Radius.circular(12),
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Description
-                                        Text(
-                                          term["meaning"]!,
-                                          style: const TextStyle(
-                                            color: Color(0xFF94A3B8), 
-                                            fontSize: 14,
-                                            height: 1.5,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        // Normal Values Section
-                                        Text(
-                                          "Normal Values:",
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: neonCyan,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        if (term["adults"] != null) ...[
-                                          _buildNormalValueRow("Adults", term["adults"]!),
-                                          const SizedBox(height: 6),
-                                        ],
-                                        if (term["children"] != null) ...[
-                                          _buildNormalValueRow("Children", term["children"]!),
-                                          const SizedBox(height: 6),
-                                        ],
-                                        if (term["elderly"] != null) ...[
-                                          _buildNormalValueRow("Elderly (65+)", term["elderly"]!),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNormalValueRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 90,
-          child: Text(
-            "$label:",
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
+  Widget _buildValueRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              '$label:',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF1E293B),
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 12,
-              height: 1.4,
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                color: const Color(0xFF64748B),
+                fontSize: 12,
+                height: 1.4,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-// Keep the old class name for backward compatibility
+// Backward compatibility
 class StatsScreen extends DictionaryScreen {
   const StatsScreen({super.key});
 }

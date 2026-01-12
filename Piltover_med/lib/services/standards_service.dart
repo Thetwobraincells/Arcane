@@ -42,4 +42,82 @@ class StandardsService {
     
     return null; // Return nothing if we failed
   }
+
+  /// Evaluates a test result against the standard for a specific user profile
+  Future<EvaluationResult> evaluateResult({
+    required String testName,
+    required double value,
+    required String sex,
+    required int age,
+  }) async {
+    final standard = await getStandard(testName);
+    
+    if (standard == null) {
+      return EvaluationResult(
+        status: 'Unknown',
+        rangeString: 'Include reference range',
+        isNormal: true, // Default to true if unknown to avoid alarm
+      );
+    }
+
+    // Find the matching range
+    ReferenceRange? match;
+    for (var range in standard.ranges) {
+      // Check sex
+      bool sexMatch = range.sex.toLowerCase() == 'any' || 
+                      range.sex.toLowerCase() == sex.toLowerCase();
+      
+      // Check age
+      bool ageMatch = age >= range.minAge && age <= range.maxAge;
+      
+      if (sexMatch && ageMatch) {
+        match = range;
+        break;
+      }
+    }
+
+    if (match == null) {
+      // If no specific range found, try to fall back to 'any' sex if we were specific
+      try {
+        match = standard.ranges.firstWhere((r) => r.sex.toLowerCase() == 'any');
+      } catch (e) {
+        return EvaluationResult(
+          status: 'Unknown',
+          rangeString: 'Range not found for profile',
+          isNormal: true,
+        );
+      }
+    }
+
+    // Compare
+    String status = 'Normal';
+    bool isNormal = true;
+    
+    if (value < match!.minValue) {
+      status = 'Low';
+      isNormal = false;
+    } else if (value > match.maxValue) {
+      status = 'High';
+      isNormal = false;
+    }
+
+    return EvaluationResult(
+      status: status,
+      rangeString: '${match.minValue} - ${match.maxValue} ${standard.unit}',
+      isNormal: isNormal,
+    );
+  }
 }
+
+class EvaluationResult {
+  final String status;
+  final String rangeString;
+  final bool isNormal;
+
+  EvaluationResult({
+    required this.status,
+    required this.rangeString,
+    required this.isNormal,
+  });
+}
+

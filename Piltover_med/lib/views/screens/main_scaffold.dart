@@ -53,7 +53,7 @@ class MainScaffoldState extends State<MainScaffold> {
       backgroundColor: arcaneBg,
       
       // KEY CHANGE: This allows the body to scroll BEHIND the nav bar
-      extendBody: true, 
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,

@@ -14,7 +14,7 @@ dependencies:
   provider: ^6.1.1
   
   # File Handling
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0
   
   # UI Enhancement
   google_fonts: ^6.1.0
@@ -22,6 +22,7 @@ dependencies:
   #Gemini AI
   google_generative_ai: ^0.4.0
   flutter_markdown: ^0.6.14
+  google_mlkit_text_recognition: ^0.13.0
 
   #Firebase Dependencies
   firebase_core: ^2.24.2

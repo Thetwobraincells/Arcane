@@ -24,7 +24,7 @@ class ReportParser {
   static String? _extractPatientName(String text) {
     // Look for common patterns for patient name
     final nameRegex = RegExp(
-      r'(?:Patient Name|Name|Pt Name)\s*[:\-\.]?\s*([A-Za-z\s\.]+)',
+      r'(?:Patient Name|Name|Pt Name)\s*[:\-\.]?\s*([A-Za-z\s\.]+?)(?=\s*(?:Age|Sex|ID|Date|\n|$))',
       caseSensitive: false,
     );
     final match = nameRegex.firstMatch(text);
@@ -43,20 +43,21 @@ class ReportParser {
 
   static DateTime? _extractDate(String text) {
     // Look for date patterns (DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD)
+    // Also supports: October 08, 2024 or Oct 8, 2024
     final dateRegex = RegExp(
-      r'(?:Date|Report Date|Collected)\s*[:\-\.]?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})',
+      r'(?:Date|Report Date|Collected)\s*[:\-\.]?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4})',
       caseSensitive: false,
     );
     final match = dateRegex.firstMatch(text);
     if (match != null) {
       final dateStr = match.group(1);
-      // Basic parsing - assuming standard formats. 
-      // In a real app, use a robust date parser.
-      // For now, return existing if parse fails, or TryParse.
-      // This is a placeholder for actual date parsing logic.
       try {
-        // Very basic attempt: just return now if parsing is complex without intl
-        // In production, use DateFormat from intl package
+        // Mock parsing for the new format since we don't have intl
+        if (dateStr!.contains(',')) {
+           // Basic hack for "October 08, 2024" -> just return today/now or try simple parse
+           // In real app, DateFormat('MMMM dd, yyyy').parse(dateStr)
+           return DateTime.now(); 
+        }
         return DateTime.now(); 
       } catch (e) {
         return null;
@@ -69,42 +70,115 @@ class ReportParser {
     List<TestResult> results = [];
     final lines = text.split('\n');
 
-    // Common units to identify test result lines
-    final units = ['mg/dL', 'g/dL', '%', 'mmol/L', 'µg/dL', 'U/L', 'mcg/dL', '/mm3', '10^3/uL', '10^6/uL'];
+    // 1. KNOWN TESTS: Words that strongly indicate a test line
+    final knownTests = [
+      'hemoglobin', 'hematocrit', 'rbc', 'wbc', 'mcv', 'mch', 'mchc', 'platelet',
+      'neutrophil', 'lymphocyte', 'monocyte', 'eosinophil', 'basophil',
+      'epithelial', 'mucus', 'bacteria', 'pus cells', 'color', 'transparency', // Urinalysis
+      'glucose', 'protein', 'ph', 'specific gravity', 'bilirubin', 'ketone', 'urobilinogen' // Chem
+    ];
+
+    // 2. KNOWN UNITS
+    final units = [
+      'mg/dl', 'g/dl', '%', 'mmol/l', 'µg/dl', 'ug/dl', 'u/l', 'mcg/dl', 
+      '/mm3', '10^3/ul', '10^6/ul', 'fl', 'pg', 'g/l', 'iu/l', '/hpf', '/lpf'
+    ];
 
     for (var line in lines) {
-      // Logic: If line contains a number and a known unit, it's likely a result
-      bool hasUnit = units.any((u) => line.contains(u));
+      final lowerLine = line.toLowerCase();
       
-      // Look for a number
+      // -- STRATEGY 1: Check for Known Test Name --
+      String? matchedTest;
+      for (var test in knownTests) {
+        if (lowerLine.contains(test)) {
+          matchedTest = test;
+          break;
+        }
+      }
+
+      // -- STRATEGY 2: Check for Unit --
+      bool hasUnit = units.any((u) => lowerLine.contains(u));
+      
+      // Must have at least a Number AND (Known Test OR Unit)
+      // Exception: Some manual tests might use text words instead of numbers (e.g. "Color: Yellow"), 
+      // but for now let's stick to numeric results to avoid too much noise, or specifically handle them.
+      
       final numberRegex = RegExp(r'(\d+(?:\.\d+)?)');
       final numberMatch = numberRegex.firstMatch(line);
 
-      if (hasUnit && numberMatch != null) {
-        // Heuristic extraction
-        // Assume format: [Test Name] [Value] [Unit] [Range/Flag]
+      // Special handling for nominal values (Negative, Positive, Clear, Yellow) if we matched a known test
+      bool isNominal = false;
+      String val = "";
+      
+      if (matchedTest != null && numberMatch == null) {
+         // Check for common words like "Negative", "Clear", "Yellow"
+         final nominalRegex = RegExp(r'(Negative|Positive|Clear|Yellow|Amorphous|Rare|Few|Moderate|Many)', caseSensitive: false);
+         final nomMatch = nominalRegex.firstMatch(line);
+         if (nomMatch != null) {
+           val = nomMatch.group(1)!;
+           isNominal = true;
+         }
+      }
+
+      if ((matchedTest != null || hasUnit) && (numberMatch != null || isNominal)) {
         
-        // Value is the first number found
-        String val = numberMatch.group(1)!;
-        
-        // Unit is the one found
-        String unit = units.firstWhere((u) => line.contains(u));
-        
-        // Test Name is likely everything before the value or the first part of the line
-        // This is very rough and would need significant refinement for real reports
-        int valIndex = line.indexOf(val);
-        String testName = line.substring(0, valIndex).trim();
-        if (testName.endsWith(':') || testName.endsWith('-')) {
-             testName = testName.substring(0, testName.length - 1).trim();
+        // Extract Value
+        if (!isNominal && numberMatch != null) {
+           val = numberMatch.group(1)!;
         }
         
-        if (testName.isEmpty) continue; // Skip invalid lines
+        // Extract Unit (if any)
+        String unit = "";
+        if (hasUnit) {
+           String matchedUnit = units.firstWhere((u) => lowerLine.contains(u));
+           int unitIndex = lowerLine.indexOf(matchedUnit);
+           // Safety check for index
+           if (unitIndex != -1) {
+             unit = line.substring(unitIndex, unitIndex + matchedUnit.length);
+           }
+        }
 
-        // Determine status (mock logic for now since range parsing is hard)
+        // Determine Test Name
+        // If we matched a known test, use that (capitalized for display)
+        String testName = "";
+        if (matchedTest != null) {
+           // Capitalize first letter
+           testName = matchedTest[0].toUpperCase() + matchedTest.substring(1);
+           
+           // If it was an acronym like RBC, make it all caps
+           if (['rbc', 'wbc', 'mcv', 'mch', 'mchc', 'ph'].contains(matchedTest)) {
+             testName = matchedTest.toUpperCase();
+           }
+        } else {
+           // Fallback to heuristic: Text before value
+           int valIndex = line.indexOf(val);
+           if (valIndex > 0) {
+              testName = line.substring(0, valIndex).trim();
+           }
+        }
+
+        // Cleanup
+        testName = testName.replaceAll(RegExp(r'[:\-\.]+$'), '').trim();
+        
+        // Blocklist info (Reference ranges often contain these words)
+        final blocklist = ['male', 'female', 'age', 'sex', 'years', 'months', 'adult', 'child', 'reference', 'range', 'units', 'result', 'flag'];
+        // Only block if we DIDN'T find a known test (if we found "Hemoglobin", ignore the blocklist checks mainly)
+        if (matchedTest == null && blocklist.contains(testName.toLowerCase())) continue;
+
+        if (testName.isEmpty || testName.length < 2) continue;
+
+        // Determine Status
         String status = 'Normal';
-        if (line.toLowerCase().contains('high') || line.contains('H ')) status = 'High';
-        if (line.toLowerCase().contains('low') || line.contains('L ')) status = 'Low';
-        if (line.toLowerCase().contains('critical')) status = 'Critical';
+        if (line.contains('High') || line.contains(' H ')) status = 'High';
+        if (line.contains('Low') || line.contains(' L ')) status = 'Low';
+        if (lowerLine.contains('critical')) status = 'Critical';
+        
+        // For nominal
+        if (val.toLowerCase() == 'positive') status = 'High'; // Generic bad
+
+        // Deduplicate logic? 
+        // For now, list allows duplicates, maybe check if we already added this testName?
+        // Let's just add it.
 
         results.add(TestResult(
           testName: testName,

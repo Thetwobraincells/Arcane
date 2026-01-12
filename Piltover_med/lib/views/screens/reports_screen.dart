@@ -328,7 +328,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     int criticalCount = 0;
 
     for (var report in reports) {
-      totalTests = totalTests + (report.testResults.length as int);
+      totalTests += report.testResults.length;
       for (var test in report.testResults) {
         switch (test.status.toLowerCase()) {
           case 'normal':
@@ -348,8 +348,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
 
     final abnormalCount = highCount + lowCount + criticalCount;
-    final normalPercentage = totalTests > 0 ? (normalCount / totalTests * 100) : 0;
-    final abnormalPercentage = totalTests > 0 ? (abnormalCount / totalTests * 100) : 0;
+    final normalPercentage = totalTests > 0 ? (normalCount / totalTests * 100) : 0.0;
+    final abnormalPercentage = totalTests > 0 ? (abnormalCount / totalTests * 100) : 0.0;
 
     return {
       'totalReports': reports.length,

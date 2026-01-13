@@ -49,8 +49,14 @@ class StandardsService {
     required double value,
     required String sex,
     required int age,
+    String? currentUnit,
   }) async {
-    final standard = await getStandard(testName);
+    MedicalStandard? standard = await getStandard(testName);
+    
+    // Fallback to built-in standards if Firebase doesn't have this test
+    if (standard == null) {
+      standard = _getBuiltInStandard(testName.toLowerCase());
+    }
     
     if (standard == null) {
       return EvaluationResult(
@@ -58,6 +64,34 @@ class StandardsService {
         rangeString: 'Include reference range',
         isNormal: true, // Default to true if unknown to avoid alarm
       );
+    }
+    
+    
+    // Auto-Convert Units (Fraction vs Percent, g/L vs g/dL)
+    double comparisonValue = value;
+    
+    // Case 1: Fraction -> Percent
+    // If value is small (<= 1.5) and range is large (min > 15), assume fraction -> percent
+    bool isSmallValue = value <= 1.5 && value >= 0;
+    bool isLargeRange = standard.ranges.any((r) => r.minValue > 15.0);
+    
+    bool isFractionUnit = (currentUnit?.toLowerCase().contains('fraction') ?? false) || 
+                          (currentUnit?.toLowerCase().contains('ratio') ?? false);
+    
+    if ((isFractionUnit || isSmallValue) && isLargeRange) {
+       comparisonValue = value * 100;
+       print("🔄 SMART CONVERT: $value -> $comparisonValue (Range starts > 15)");
+    }
+    
+    // Case 2: g/L -> g/dL
+    // If unit is g/L (e.g. 135) and standard is g/dL (e.g. 12-15), divide by 10
+    // Check if value is large (> 50) and range is small (< 20)
+    bool isGramPerLiter = (currentUnit?.toLowerCase().contains('g/l') ?? false) && 
+                          !(currentUnit?.toLowerCase().contains('g/dl') ?? false);
+    
+    if (isGramPerLiter || (value > 50 && standard.ranges.any((r) => r.maxValue < 25))) {
+       comparisonValue = value / 10;
+       print("🔄 SMART CONVERT: $value g/L -> $comparisonValue g/dL");
     }
 
     // Find the matching range
@@ -93,10 +127,10 @@ class StandardsService {
     String status = 'Normal';
     bool isNormal = true;
     
-    if (value < match!.minValue) {
+    if (comparisonValue < match!.minValue) {
       status = 'Low';
       isNormal = false;
-    } else if (value > match.maxValue) {
+    } else if (comparisonValue > match.maxValue) {
       status = 'High';
       isNormal = false;
     }
@@ -106,6 +140,62 @@ class StandardsService {
       rangeString: '${match.minValue} - ${match.maxValue} ${standard.unit}',
       isNormal: isNormal,
     );
+  }
+
+  /// Built-in fallback standards for common tests when Firebase doesn't have them
+  MedicalStandard? _getBuiltInStandard(String testName) {
+    final builtInStandards = <String, MedicalStandard>{
+      'neutrophil': MedicalStandard(
+        id: 'neutrophil',
+        unit: '%',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 40.0, maxValue: 70.0)],
+      ),
+      'lymphocyte': MedicalStandard(
+        id: 'lymphocyte',
+        unit: '%',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 20.0, maxValue: 40.0)],
+      ),
+      'basophil': MedicalStandard(
+        id: 'basophil',
+        unit: '%',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 0.0, maxValue: 1.0)],
+      ),
+      'wbc': MedicalStandard(
+        id: 'wbc',
+        unit: '10^3/µL',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 4.5, maxValue: 11.0)],
+      ),
+      'platelet': MedicalStandard(
+        id: 'platelet',
+        unit: '10^3/µL',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 150.0, maxValue: 400.0)],
+      ),
+      'hematocrit': MedicalStandard(
+        id: 'hematocrit',
+        unit: '%',
+        ranges: [
+          ReferenceRange(sex: 'male', minAge: 0, maxAge: 120, minValue: 40.0, maxValue: 54.0),
+          ReferenceRange(sex: 'female', minAge: 0, maxAge: 120, minValue: 36.0, maxValue: 48.0),
+        ],
+      ),
+      'mcv': MedicalStandard(
+        id: 'mcv',
+        unit: 'fL',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 80.0, maxValue: 100.0)],
+      ),
+      'mch': MedicalStandard(
+        id: 'mch',
+        unit: 'pg',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 27.0, maxValue: 33.0)],
+      ),
+      'mchc': MedicalStandard(
+        id: 'mchc',
+        unit: 'g/dL',
+        ranges: [ReferenceRange(sex: 'any', minAge: 0, maxAge: 120, minValue: 32.0, maxValue: 36.0)],
+      ),
+    };
+
+    return builtInStandards[testName];
   }
 }
 

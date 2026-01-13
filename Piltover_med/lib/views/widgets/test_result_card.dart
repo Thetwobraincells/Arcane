@@ -161,7 +161,9 @@ class TestResultCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${test.value} ${test.unit}',
+                              test.unit.isNotEmpty && test.unit != 'N/A' 
+                                  ? '${test.value} ${test.unit}'
+                                  : test.value,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 color: const Color(0xFF64748B),

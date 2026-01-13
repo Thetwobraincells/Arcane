@@ -2,9 +2,21 @@
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
 
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+
 class ReportParser {
-  /// Parses raw text into a LabReport object
-  static LabReport parse(String text, String reportId) {
+  /// Parses raw text into a LabReport object.
+  /// Modified to accept [RecognizedText] for better layout analysis.
+  static LabReport parse(dynamic textInput, String reportId) {
+    String text;
+    
+    // If we have the full OCR object, we can reconstruct the lines better
+    if (textInput is RecognizedText) {
+      text = _reconstructText(textInput);
+    } else {
+      text = textInput.toString();
+    }
+
     String patientName = _extractPatientName(text) ?? 'Unknown Patient';
     String patientId = _extractPatientId(text) ?? 'Unknown ID';
     DateTime reportDate = _extractDate(text) ?? DateTime.now();
@@ -21,14 +33,65 @@ class ReportParser {
     );
   }
 
+  /// Reconstructs text attempts to align lines physically (Row-based)
+  /// instead of Block-based (Column-based)
+  static String _reconstructText(RecognizedText recognizedText) {
+    List<TextLine> allLines = [];
+    for (var block in recognizedText.blocks) {
+      allLines.addAll(block.lines);
+    }
+
+    // Sort heavily by Top (Y), then by Left (X)
+    // We group lines that are roughly on the same Y-axis
+    allLines.sort((a, b) {
+      // 10px threshold for being on the same line
+      if ((a.boundingBox.top - b.boundingBox.top).abs() < 15) {
+        return a.boundingBox.left.compareTo(b.boundingBox.left);
+      }
+      return a.boundingBox.top.compareTo(b.boundingBox.top);
+    });
+
+    StringBuffer sb = StringBuffer();
+    double lastTop = -100;
+    
+    for (var line in allLines) {
+      // If we jumped down significantly, new line
+      if ((line.boundingBox.top - lastTop).abs() > 15) {
+        if (sb.isNotEmpty) sb.writeln();
+        lastTop = line.boundingBox.top;
+      } else {
+        // Same line, add space
+        sb.write(" "); 
+      }
+      sb.write(line.text);
+    }
+    
+    return sb.toString();
+  }
+
   static String? _extractPatientName(String text) {
-    // Look for common patterns for patient name
-    final nameRegex = RegExp(
-      r'(?:Patient Name|Name|Pt Name)\s*[:\-\.]?\s*([A-Za-z\s\.]+?)(?=\s*(?:Age|Sex|ID|Date|\n|$))',
+    // 1. Look for explicit "Name: Value" pattern (Strongest signal)
+    final explicitRegex = RegExp(
+      r'(?:Patient Name|Name|Pt Name)\s*[:\-\.]?\s*([A-Za-z\.\,\s]+?)(?=\s*(?:Age|Sex|ID|Date|Ref|Dr|\n|$))',
       caseSensitive: false,
     );
-    final match = nameRegex.firstMatch(text);
-    return match?.group(1)?.trim();
+    final explicitMatch = explicitRegex.firstMatch(text);
+    if (explicitMatch != null) {
+      String name = explicitMatch.group(1)?.trim() ?? "";
+      if (name.isNotEmpty && name.length > 3) return name;
+    }
+
+    // 2. Fallback: Look for "Lastname, Firstname" format (Common in med reports)
+    // Matches: ALL CAPS text with a comma, e.g., "MANALO, JUSTINE NICOLE"
+    final looseNameRegex = RegExp(
+      r'(?<=^|\n)\s*([A-Z][A-Z\s]+,\s*[A-Z][A-Z\s]+)(?=\s*(?:Age|Sex|ID|\n|$))',
+    );
+    final looseMatch = looseNameRegex.firstMatch(text);
+    if (looseMatch != null) {
+       return looseMatch.group(1)?.trim();
+    }
+
+    return null;
   }
 
   static String? _extractPatientId(String text) {
@@ -66,16 +129,45 @@ class ReportParser {
     return null;
   }
 
+  static final Map<String, String> _testDescriptions = {
+    'hemoglobin': 'Oxygen-carrying protein in red blood cells.',
+    'hematocrit': 'Percentage of blood volume occupied by red blood cells.',
+    'rbc': 'Number of red blood cells (erythrocytes).',
+    'wbc': 'Number of white blood cells (leukocytes), fights infection.',
+    'platelet': 'Cells that help blood clot.',
+    'mcv': 'Average size of your red blood cells.',
+    'mch': 'Average amount of hemoglobin in each red blood cell.',
+    'mchc': 'Concentration of hemoglobin in a given volume of red blood cells.',
+    'neutrophil': 'Type of WBC that eats bacteria and fights infection.',
+    'lymphocyte': 'Type of WBC that produces antibodies and fights viruses.',
+    'monocyte': 'Type of WBC that cleans up dead cells.',
+    'eosinophil': 'Type of WBC involved in allergic reactions and parasites.',
+    'basophil': 'Type of WBC involved in allergic reactions.',
+    'glucose': 'Sugar level in your blood.',
+    'protein': 'Amount of protein in urine (Proteinuria).',
+    'ph': 'Acidity or alkalinity level.',
+    'specific gravity': 'Concentration of the urine.',
+    'color': 'Visual appearance of the sample.',
+    'transparency': 'Clarity of the sample.',
+    'pus cells': 'Sign of infection (pyuria).',
+    'epithelial': 'Cells lining the urinary tract.',
+    'bacteria': 'Presence of bacteria suggesting infection.',
+    'mucus': 'Mucus threads in the sample.',
+    'bilirubin': 'Breakdown product of blood, checks liver function.',
+    'ketone': 'Byproduct of fat breakdown.',
+  };
+
   static List<TestResult> _extractTestResults(String text, DateTime date) {
     List<TestResult> results = [];
     final lines = text.split('\n');
 
-    // 1. KNOWN TESTS: Words that strongly indicate a test line
+    // 1. KNOWN TESTS
     final knownTests = [
       'hemoglobin', 'hematocrit', 'rbc', 'wbc', 'mcv', 'mch', 'mchc', 'platelet',
       'neutrophil', 'lymphocyte', 'monocyte', 'eosinophil', 'basophil',
-      'epithelial', 'mucus', 'bacteria', 'pus cells', 'color', 'transparency', // Urinalysis
-      'glucose', 'protein', 'ph', 'specific gravity', 'bilirubin', 'ketone', 'urobilinogen' // Chem
+      'epithelial', 'mucus', 'bacteria', 'pus cells', 'color', 'transparency', // UA
+      'glucose', 'protein', 'ph', 'specific gravity', 'bilirubin', 'ketone', 'urobilinogen', // Chem
+      'consistency' // Fecalysis
     ];
 
     // 2. KNOWN UNITS
@@ -83,36 +175,78 @@ class ReportParser {
       'mg/dl', 'g/dl', '%', 'mmol/l', 'µg/dl', 'ug/dl', 'u/l', 'mcg/dl', 
       '/mm3', '10^3/ul', '10^6/ul', 'fl', 'pg', 'g/l', 'iu/l', '/hpf', '/lpf'
     ];
+    
+    // TRACK SECTIONS
+    String currentSection = ""; // "CBC", "UA", "FA", "SEROLOGY"
 
     for (var line in lines) {
       final lowerLine = line.toLowerCase();
       
+      // Detect Section Headers
+      if (lowerLine.contains('complete blood count') || lowerLine.contains('cbc')) {
+        currentSection = "CBC";
+        continue;
+      } else if (lowerLine.contains('urinalysis') || lowerLine.contains('(ua)')) {
+        currentSection = "UA";
+        continue;
+      } else if (lowerLine.contains('fecalysis') || lowerLine.contains('(fa)')) {
+        currentSection = "FA";
+        continue;
+      } else if (lowerLine.contains('serology')) {
+        currentSection = "SEROLOGY";
+        continue;
+      }
+
       // -- STRATEGY 1: Check for Known Test Name --
       String? matchedTest;
-      for (var test in knownTests) {
-        if (lowerLine.contains(test)) {
-          matchedTest = test;
-          break;
+        // "Smart" Matching Strategy
+        // Short words (pH, RBC) or common words (Color) need strict boundaries to avoid false positives (e.g. "ph" in "Lymphocyte")
+        // Long words (Hemoglobin, Neutrophil) are safe to loose match
+        
+      for (final test in knownTests) {
+        bool isAmbiguous = test.length <= 4 || ['color', 'consistency', 'bacteria', 'mucus', 'pus cells', 'epithelial cells'].contains(test);
+        
+        if (isAmbiguous) {
+           // Strict Word Boundary for ambiguous terms
+           final regex = RegExp(r'\b' + RegExp.escape(test) + r'\b', caseSensitive: false);
+           if (regex.hasMatch(line)) {
+             matchedTest = test;
+             // Don't break yet, check section validity
+           }
+        } else {
+           // Loose match for distinct terms
+           if (lowerLine.contains(test)) {
+             matchedTest = test;
+             // Don't break yet
+           }
+        }
+
+        if (matchedTest != null) {
+           // SECTION FILTER: Prevent ghosts
+           // If we are strictly in CBC section, ignore UA/FA specific tests
+           bool isUAorFATest = ['color', 'transparency', 'pus cells', 'epithelial cells', 'bacteria', 'mucus', 'consistency', 'glucose', 'protein', 'bilirubin', 'ketone'].contains(matchedTest);
+           
+           if (currentSection == "CBC" && isUAorFATest) {
+              matchedTest = null; // Ignore ghost
+              continue; 
+           }
+           
+           break; // Valid match found
         }
       }
 
       // -- STRATEGY 2: Check for Unit --
       bool hasUnit = units.any((u) => lowerLine.contains(u));
       
-      // Must have at least a Number AND (Known Test OR Unit)
-      // Exception: Some manual tests might use text words instead of numbers (e.g. "Color: Yellow"), 
-      // but for now let's stick to numeric results to avoid too much noise, or specifically handle them.
-      
       final numberRegex = RegExp(r'(\d+(?:\.\d+)?)');
       final numberMatch = numberRegex.firstMatch(line);
 
-      // Special handling for nominal values (Negative, Positive, Clear, Yellow) if we matched a known test
+      // Special handling for nominal values
       bool isNominal = false;
       String val = "";
       
       if (matchedTest != null && numberMatch == null) {
-         // Check for common words like "Negative", "Clear", "Yellow"
-         final nominalRegex = RegExp(r'(Negative|Positive|Clear|Yellow|Amorphous|Rare|Few|Moderate|Many)', caseSensitive: false);
+         final nominalRegex = RegExp(r'(Negative|Positive|Clear|Yellow|Light Yellow|Light Brown|Brown|Semi Formed|Soft|Watery|Amorphous|Rare|Few|Moderate|Many|Nonreactive|Reactive)', caseSensitive: false);
          final nomMatch = nominalRegex.firstMatch(line);
          if (nomMatch != null) {
            val = nomMatch.group(1)!;
@@ -132,40 +266,62 @@ class ReportParser {
         if (hasUnit) {
            String matchedUnit = units.firstWhere((u) => lowerLine.contains(u));
            int unitIndex = lowerLine.indexOf(matchedUnit);
-           // Safety check for index
            if (unitIndex != -1) {
              unit = line.substring(unitIndex, unitIndex + matchedUnit.length);
            }
         }
 
-        // Determine Test Name
-        // If we matched a known test, use that (capitalized for display)
+        // Determine Test Name properly
         String testName = "";
         if (matchedTest != null) {
-           // Capitalize first letter
+           // Capitalize
            testName = matchedTest[0].toUpperCase() + matchedTest.substring(1);
-           
-           // If it was an acronym like RBC, make it all caps
            if (['rbc', 'wbc', 'mcv', 'mch', 'mchc', 'ph'].contains(matchedTest)) {
              testName = matchedTest.toUpperCase();
            }
         } else {
-           // Fallback to heuristic: Text before value
            int valIndex = line.indexOf(val);
            if (valIndex > 0) {
               testName = line.substring(0, valIndex).trim();
            }
         }
-
-        // Cleanup
+        
         testName = testName.replaceAll(RegExp(r'[:\-\.]+$'), '').trim();
         
-        // Blocklist info (Reference ranges often contain these words)
-        final blocklist = ['male', 'female', 'age', 'sex', 'years', 'months', 'adult', 'child', 'reference', 'range', 'units', 'result', 'flag'];
-        // Only block if we DIDN'T find a known test (if we found "Hemoglobin", ignore the blocklist checks mainly)
+        // SCOPE TEST NAME BASED ON SECTION
+        // Handle RBC collisions
+        if (testName == "RBC") {
+          if (currentSection == "UA") testName = "RBC (Urine)";
+          else if (currentSection == "FA") testName = "RBC (Stool)";
+        }
+        if (testName == "Bacteria" || testName == "Mucus" || testName == "Epithelial Cells" || testName == "Pus Cells") {
+           if (currentSection == "UA") testName = "$testName (Urine)";
+           else if (currentSection == "FA") testName = "$testName (Stool)";
+        }
+        if ((testName == "Color" || testName == "Consistency")) {
+           if (currentSection == "FA") testName = "$testName (Stool)";
+           else if (currentSection == "UA") testName = "$testName (Urine)";
+        }
+        
+        // Blocklist
+        final blocklist = ['male', 'female', 'age', 'sex', 'years', 'months', 'adult', 'child', 'reference', 'range', 'units', 'result', 'flag', 'physical', 'microscopic', 'chemical'];
         if (matchedTest == null && blocklist.contains(testName.toLowerCase())) continue;
 
         if (testName.isEmpty || testName.length < 2) continue;
+        
+        // INFER UNITS (Fine-tuning)
+        if (testName == "Hematocrit" && unit.isEmpty && val.contains('.')) {
+          double? v = double.tryParse(val);
+          if (v != null && v < 1.0) unit = "ratio";
+        }
+        if (testName == "Neutrophil" && unit.isEmpty && val.contains('.')) {
+          double? v = double.tryParse(val);
+          if (v != null && v < 1.0) unit = "fraction"; // or ratio
+        }
+        if (testName == "Lymphocyte" && unit.isEmpty && val.contains('.')) {
+           double? v = double.tryParse(val);
+           if (v != null && v < 1.0) unit = "fraction";
+        }
 
         // Determine Status
         String status = 'Normal';
@@ -173,12 +329,13 @@ class ReportParser {
         if (line.contains('Low') || line.contains(' L ')) status = 'Low';
         if (lowerLine.contains('critical')) status = 'Critical';
         
-        // For nominal
-        if (val.toLowerCase() == 'positive') status = 'High'; // Generic bad
+        if (val.toLowerCase() == 'positive' || val.toLowerCase() == 'reactive') status = 'High';
 
-        // Deduplicate logic? 
-        // For now, list allows duplicates, maybe check if we already added this testName?
-        // Let's just add it.
+        // GET DESCRIPTION
+        String description = 'Extracted from image';
+        if (matchedTest != null) {
+           description = _testDescriptions[matchedTest] ?? description;
+        }
 
         results.add(TestResult(
           testName: testName,
@@ -186,7 +343,7 @@ class ReportParser {
           unit: unit,
           status: status,
           date: date,
-          simpleExplanation: 'Extracted from image',
+          simpleExplanation: description,
         ));
       }
     }

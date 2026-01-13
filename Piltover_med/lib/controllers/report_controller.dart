@@ -39,16 +39,20 @@ class ReportController extends ChangeNotifier {
 
       // 3. ✅ Navigate to Reports screen NOW (don't wait for AI)
       mainScaffoldKey.currentState?.goToTab(1);
+      
+      // Capture Services before async/context loss
+      final standardsService = context.read<StandardsService>();
+      final userService = context.read<UserService>();
 
       // 4. ✅ Start AI analysis in background (non-blocking)
       // Use provided fileName or try to extract from input
       final detectedFileName = fileName ?? _getFileName(imageInput);
-      _analyzeInBackground(reportId, imageInput, context, fileName: detectedFileName);
+      _analyzeInBackground(reportId, imageInput, standardsService, userService, fileName: detectedFileName);
 
     } catch (e) {
       print("Error starting analysis: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar( // Context safe here? Maybe.
           SnackBar(
             content: Text("Failed to start analysis: ${e.toString()}"),
             backgroundColor: Colors.red,
@@ -63,7 +67,8 @@ class ReportController extends ChangeNotifier {
   Future<void> _analyzeInBackground(
     String reportId,
     dynamic imageInput,
-    BuildContext context, {
+    StandardsService standardsService,
+    UserService userService, {
     String? fileName,
   }) async {
     try {
@@ -79,51 +84,38 @@ class ReportController extends ChangeNotifier {
            
            print("OCR Text: ${recognizedText.text.substring(0, 50)}..."); // Debug log
 
-           // Parse the text locally
-           aiReport = ReportParser.parse(recognizedText.text, reportId);
+           // Parse the text locally (Pass the full object for reconstruction)
+           aiReport = ReportParser.parse(recognizedText, reportId);
+           
+           // DEBUG: If no results found, show raw text in notes
+           if (aiReport.testResults.isEmpty) {
+             print("DEBUG: No results found. Raw text: ${recognizedText.text}");
+             aiReport = aiReport.copyWithCompleted(
+               patientName: aiReport.patientName,
+               patientId: aiReport.patientId,
+               testResults: [],
+               notes: 'DEBUG RAW TEXT:\n${recognizedText.text}',
+             );
+           }
            
            textRecognizer.close();
          } catch (e) {
            print("On-Device OCR Failed: $e");
-           // Fallback to Cloud if local fails? Or just rethrow?
-           // For now, let's catch and continue to Cloud if user wants, 
-           // but the requirement is "Instead of cloud", so maybe just fail or return empty?
-           // Let's try cloud as fallback for now or proceed with what we have.
          }
       }
-
-      // If On-Device produced a valid report with results, use it.
-      // Otherwise, or if on unsupported platform, you might want to fall back to Gemini 
-      // OR just return the empty/partial report.
-      
-      // For this task, "Instead of sending the image to the cloud", strictly implies local only.
-      // However, if I am on Windows, I cannot do local.
-      // I will keep the Gemini call as a fallback for non-mobile for now, 
-      // but on mobile it will use the parsed report.
       
       if (aiReport == null || aiReport.testResults.isEmpty) {
-         // Fallback or Non-Mobile flow
-         // Note: User asked to REPLACE, but on Windows we can't run ML Kit.
-         // If we are on Windows, we will use Gemini as a dev fallback, or show error?
-         // I'll leave Gemini enabled for non-mobile so I can verify on Windows if needed (though user said on-device).
-         // Actually, I'll prefer the OCR result if it exists.
+         // Fallback logic if needed
       }
       
-      // If we used OCR, aiReport is populated.
-      // If we didn't (e.g. Windows), we need to fetch it (or error out if strict).
-      
-      // ⚠️ CHANGED: User requested NO CLOUD analysis for images.
-      // If On-Device OCR failed or is not available (e.g. Windows), we fail.
       if (aiReport == null) {
-         // Previously: aiReport = await _aiService.analyzeImage(imageInput, fileName: fileName);
          throw Exception("On-device analysis failed or platform not supported. Cloud analysis is disabled.");
       }
 
       // ✅ NEW: Validate against Standards (Firebase)
-      if (aiReport != null && context.mounted) {
+      // No context.mounted check needed for services since we passed them in
+      if (aiReport != null) {
         try {
-          final standardsService = context.read<StandardsService>();
-          final userService = context.read<UserService>();
           final user = userService.currentUser;
 
           List<TestResult> enrichedResults = [];
@@ -140,14 +132,20 @@ class ReportController extends ChangeNotifier {
                 value: val,
                 sex: user.sex,
                 age: user.age,
+                currentUnit: result.unit,
               );
+
+              // Preserve original status if we couldn't validate against standards
+              String finalStatus = evaluation.status == 'Unknown' 
+                  ? result.status  // Keep original parsed status
+                  : evaluation.status;  // Use validated status
 
               // Update the result with new status and range info
               enrichedResults.add(TestResult(
                 testName: result.testName,
                 value: result.value,
                 unit: result.unit,
-                status: evaluation.status, // Overwrite status based on standard
+                status: finalStatus,
                 date: result.date,
                 simpleExplanation: '${result.simpleExplanation ?? ""} (Standard range: ${evaluation.rangeString})',
               ));
@@ -163,6 +161,30 @@ class ReportController extends ChangeNotifier {
             testResults: enrichedResults,
             notes: aiReport.notes,
           );
+          
+          // ✅ Generate AI Summary (Gemini)
+          try {
+             print("🧠 Generating AI Summary...");
+             final summary = await _aiService.summarizeResults({
+               'patientName': aiReport!.patientName,
+               'reportDate': aiReport!.reportDate.toIso8601String(),
+               'testResults': enrichedResults.map((t) => {
+                 'testName': t.testName,
+                 'value': t.value,
+                 'unit': t.unit,
+                 'status': t.status, // Pass the CORRECTED status
+               }).toList(),
+             });
+             
+             aiReport = aiReport!.copyWithCompleted(
+               patientName: aiReport.patientName,
+               patientId: aiReport.patientId,
+               testResults: enrichedResults,
+               notes: summary,
+             );
+          } catch (e) {
+             print("Summary Generation Failed: $e");
+          }
           
         } catch (e) {
           print("Standards Check Failed: $e");
@@ -180,18 +202,6 @@ class ReportController extends ChangeNotifier {
           notes: aiReport!.notes,
         );
         notifyListeners(); // ✅ UI updates with real data
-
-        // Success feedback (non-intrusive)
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Analysis Complete!"),
-              backgroundColor: Color(0xFF10B981), // Green
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
       }
     } catch (e) {
       print("Analysis Error: $e");
@@ -203,18 +213,6 @@ class ReportController extends ChangeNotifier {
           e.toString().split(':').last.trim(),
         );
         notifyListeners(); // ✅ UI shows error state
-
-        // Error feedback
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Analysis Failed: ${e.toString().split(':').last.trim()}"),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
       }
     }
   }

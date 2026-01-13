@@ -105,4 +105,33 @@ class GeminiService {
       throw Exception('Failed to parse AI response: $e');
     }
   }
+  Future<String> summarizeResults(Map<String, dynamic> reportData) async {
+    final prompt = Content.text('''
+      Act as a friendly medical assistant. Summarize these lab results for a patient in plain English. 
+      Highlight any abnormal values (High/Low). Be reassuring but clear. 
+      Keep it under 3 sentences. Avoid complex medical jargon.
+      
+      Return ONLY a JSON object with a single field "summary":
+      {
+        "summary": "Your generated summary here..."
+      }
+      
+      Lab Results:
+      ${jsonEncode(reportData)}
+    ''');
+
+    try {
+      final response = await _model.generateContent([prompt]);
+      final text = response.text;
+      if (text == null) return "Summary not available.";
+      
+      // Clean and parse JSON
+      final cleanJson = text.replaceAll(RegExp(r'```json|```'), '').trim();
+      final data = jsonDecode(cleanJson);
+      return data['summary']?.toString() ?? "Summary format error.";
+    } catch (e) {
+      print("AI Summary Failed: $e");
+      return "Generated via On-Device OCR (AI Summary Unavailable)";
+    }
+  }
 }

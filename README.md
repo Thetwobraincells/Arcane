@@ -3,8 +3,8 @@
 > **Information, not Diagnosis. Clarity, not Confusion.**
 
 ### 🏆 Hackathon Pitch (30-Second Read)
-Medical lab reports are written for doctors — not patients.  
-**MediLens** is a **privacy-first** application that instantly translates complex medical reports into **clear, human-readable health insights**, helping users understand *what’s normal, what’s not, and what needs attention* — without storing or leaking sensitive medical data.
+Medical lab reports are written for doctors and not patients.  
+**MediLens** is a **privacy-first** application that instantly translates complex medical reports into **clear, human-readable health insights**, helping users understand *what’s normal, what’s not, and what needs attention* without storing or leaking sensitive medical data.
 
 ---
 
@@ -39,7 +39,7 @@ Medical lab reports are written for doctors — not patients.
 ### 🚦 Instant Visual Triage
 - Traffic-light system for test results:
   - 🟢 Green — Normal
-  - 🟠 Amber — Needs attention
+  - 🟠 Orange — Needs attention
   - 🔴 Red — Critical / Out of range
 
 ### 📂 Multi-Source Report Ingestion
@@ -61,7 +61,7 @@ Medical lab reports are written for doctors — not patients.
 ✅ **Clear Separation of Concerns** — Clean architecture  
 ✅ **Ethical AI Use** — Information, not diagnosis  
 
-> MediLens doesn’t replace doctors — it prepares patients.
+> MediLens doesn’t replace doctors but prepares patients.
 
 ## 🛠️ Tech Stack (Google Ecosystem)
 
@@ -94,7 +94,7 @@ Follow these steps to run **MediLens** locally.
 ### 2️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/YourUsername/MediLens.git
+git clone https://github.com/Thetwobraincells/Arcane.git
 cd MediLens
 ```
 
@@ -138,7 +138,7 @@ class Secrets {
 3. Add an **Android App** with the package name:
 
 ```
-com.example.arcane_medical_app
+com.example.medilens_medical_app
 ```
 
 4. Download `google-services.json`
@@ -212,9 +212,9 @@ git push origin feature/AmazingFeature
 
 5. Open a Pull Request
 
-Project Made For: [TechSprint - GDG]
-Team: [CodeBlitz]
-Project Status: [MVP]
+Built for the **[TechSprint - GDG]**.
+* **Team**: [CodeBlitz]
+* **Status**: Prototype / MVP
 
 ---
 
@@ -229,4 +229,4 @@ Project Status: [MVP]
 
 Always consult a licensed healthcare professional.
 
-> *Technology should explain health — not complicate it.*
+> *Progress Day is Everyday*

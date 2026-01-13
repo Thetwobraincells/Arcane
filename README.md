@@ -1,28 +1,27 @@
-# 💎 Medical Dashboard (Piltover Med)
+# 🩺 MediLens: Your Health Data, Decoded.
 
 > **"Science and Magic, united for better health."**
 
-A futuristic, **Hextech-styled** medical report analysis platform built with Flutter. This project reimagines boring medical data into a visually stunning, easy-to-understand dashboard inspired by the aesthetics of *Arcane*.
-
-Powered by **Google Gemini AI** for instant report interpretation.
+MediLens is a privacy-first intelligent companion that bridges the gap between complex medical reports and patient understanding. By fusing the mathematical precision of Google ML Kit with the reasoning capabilities of Gemini 3.0 Flash, MediLens transforms dense, jargon-heavy lab reports into clear, actionable health stories—all while keeping your data secure on your device.
 
 ---
 
 ### 🚀 Key Features
 
-* **🧠 Multimodal AI Analyst**: Uses **Google Gemini Flash** to "see" and interpret complex medical report images, extracting data into structured JSON.
-* **📚 Medical Codex**: A built-in "Arcane Knowledge" dictionary that explains medical terms (Hemoglobin, Lipids, etc.) with reference ranges for Adults, Children, and the Elderly.
-* **🔮 Hextech UI**: A custom-built, glowing dark theme that makes data pop with "ink sparkle" shaders and glassmorphism.
-* **📊 Health Insights**: Automatically calculates health scores and visualizes test status distribution (Normal vs. Critical).
-* **🛡️ Privacy-First**: Features a "Guest Mode" with **Zero-Persistence** architecture. Reports are processed in memory and never stored on a backend server.
-* **📂 Smart Upload**: Supports Gallery and Camera input for JPG, PNG, and PDF files with validation.
+* **🛡️ Edge-First Privacy (Zero-Persistence)**: Session-based architecture ensures medical data vanishes from memory once the app closes.
+* **🧠 Hybrid Intelligence Engine**: Combines ML Kit's deterministic OCR for facts with Gemini 3.0's empathy for context.
+* **🚦 Instant Visual Triage**: Color-coded traffic light system (Green/Amber/Red) instantly flags normal vs. critical results.
+* **📂 Multi-Source Ingestion**: Smartly captures and processes reports from PDF documents, gallery images, or live camera.
+* **🗣️ Plain English Translator**: Converts complex medical terminology into simple, reassuring summaries for non-experts.
 
 ---
 
 ### 🛠️ Tech Stack
 
-* **Framework**: [Flutter](https://flutter.dev/) (Dart)
-* **AI Engine**: [Google Generative AI SDK](https://pub.dev/packages/google_generative_ai) (Gemini 1.5 Flash)
+* **Framework**: [Flutter](https://flutter.dev/) (Dart 3.0+)
+* **Vision Engine**: [Google ML Kit](https://developers.google.com/ml-kit/vision/text-recognition/v2) (On-Device Text Recognition v2)
+* **Intelligence**: [Google Generative AI SDK](https://pub.dev/packages/google_generative_ai) (Gemini 3.0 Flash)
+* **Reference Engine**: [Firebase Firestore](https://firebase.google.com/docs/firestore) (For validating reference ranges)
 * **State Management**: `Provider` (Multi-provider setup)
 * **UI/Fonts**: `Google Fonts` (Outfit/Inter), Custom Shaders
 * **File Handling**: `file_picker`
@@ -30,14 +29,27 @@ Powered by **Google Gemini AI** for instant report interpretation.
 ---
 
 ### 📂 Architecture & Modules
-
-* **`lib/services/gemini_service.dart`**: The "Brain" of the app. Handles the connection to Google Gemini, sending image byte data and receiving structured JSON with simplified explanations.
-* **`lib/controllers/upload_controller.dart`**: Manages file picking, permission handling, and file type validation (JPG/PNG/PDF).
-* **`lib/views/screens/`**:
-    * `dashboard_screen.dart`: Main landing with quick stats.
-    * `reports_screen.dart`: detailed breakdown of analyzed tests with AI warnings.
-    * `stats_screen.dart` (Medical Codex): Searchable dictionary of medical terminology.
-    * `settings_screen.dart`: App preferences, units, and privacy controls.
+```
+lib/
+├── 🧠 services/
+│   ├── gemini_service.dart      # The "Brain" - Handles AI summarization and queries.
+│   ├── standards_service.dart   # The "Judge" - Fetches reference ranges from Firebase.
+│   └── user_service.dart        # Manages user session and preferences.
+│
+├── ⚙️ utils/
+│   ├── report_parser.dart       # The "Translator" - Core logic combining OCR + Regex.
+│   └── constants.dart           # App-wide constants and configuration.
+│
+├── 🎮 controllers/
+│   ├── upload_controller.dart   # Handles file picking, permissions, and validation.
+│   └── report_controller.dart   # Manages the state of the active medical report.
+│
+└── 📱 views/
+    ├── screens/
+    │   ├── dashboard_screen.dart # Main landing page with quick stats.
+    │   └── reports_screen.dart   # Detailed breakdown of tests with AI insights.
+    └── widgets/                 # Reusable UI components (Cards, Buttons, Headers).
+```
 
 ---
 
@@ -68,11 +80,13 @@ Powered by **Google Gemini AI** for instant report interpretation.
 ---
 
 ### 🤝 Contributing
-Built for the **[Arcane - IEEE]**.
+Built for the **[TechSprint - GDG]**.
 * **Team**: [CodeBlitz]
 * **Status**: Prototype / MVP
 
 ### ⚠️ Disclaimer
-This application is for **educational and demonstration purposes only**. The AI-generated insights should not be treated as medical advice. Always consult a qualified healthcare provider.
+**MediLens** is a prototype for educational and demonstration purposes only.
+
+The insights generated by this application are derived from Artificial Intelligence and standard algorithms. They do not constitute a medical diagnosis. Errors in OCR or AI interpretation can occur. Always consult a qualified healthcare professional for medical advice.
 
 > *"Progress day is every day."*

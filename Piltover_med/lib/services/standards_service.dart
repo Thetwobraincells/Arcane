@@ -1,9 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/medical_standard_model.dart';
 
 class StandardsService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
   // A small memory bank (cache) so we don't ask Firebase for the same thing twice
   final Map<String, MedicalStandard> _cache = {};
 
@@ -18,29 +15,17 @@ class StandardsService {
       return _cache[key];
     }
 
-    try {
-      print("🌐 Fetching $key from Firebase...");
-      
-      // 3. Go to the 'medical_standards' collection and find the document 'key'
-      final docRef = _firestore.collection('medical_standards').doc(key);
-      final docSnapshot = await docRef.get();
-
-      if (docSnapshot.exists && docSnapshot.data() != null) {
-        // 4. Convert the data to our Dart Model
-        final standard = MedicalStandard.fromSnapshot(key, docSnapshot.data()!);
-        
-        // 5. Save it to cache for next time
-        _cache[key] = standard;
-        print("✅ Successfully loaded standard for $key");
-        return standard;
-      } else {
-        print("⚠️ Document for $key does not exist in Database.");
-      }
-    } catch (e) {
-      print("❌ Error fetching standard for $key: $e");
+    // Firebase/Firestore is not used in this project mode. Keep the async API
+    // and provide local built-in ranges only.
+    final standard = _getBuiltInStandard(key);
+    if (standard != null) {
+      _cache[key] = standard;
+      print("✅ Loaded built-in standard for $key");
+      return standard;
     }
-    
-    return null; // Return nothing if we failed
+
+    print("⚠️ No built-in standard found for $key.");
+    return null;
   }
 
   /// Evaluates a test result against the standard for a specific user profile

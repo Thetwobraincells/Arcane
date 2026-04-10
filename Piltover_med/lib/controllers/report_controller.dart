@@ -1,15 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/lab_report_model.dart';
 import '../models/test_result_model.dart';
 import '../services/gemini_service.dart';
 import '../views/screens/main_scaffold.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:provider/provider.dart';
-import '../utils/report_parser.dart';
 import '../services/standards_service.dart';
 import '../services/user_service.dart';
 
@@ -74,42 +71,16 @@ class ReportController extends ChangeNotifier {
     try {
       LabReport? aiReport;
 
-      // Check if we are on a mobile platform for On-Device OCR
-      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-         try {
-           print("Starting On-Device OCR...");
-           final inputImage = InputImage.fromFile(imageInput as File);
-           final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-           final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-           
-           print("OCR Text: ${recognizedText.text.substring(0, 50)}..."); // Debug log
+      // Direct AI-based analysis (Gemini only)
+      try {
+        print("☁️ Running Gemini analysis (no on-device OCR)...");
+        aiReport = await _aiService.analyzeImage(imageInput, fileName: fileName);
+      } catch (e) {
+        print("Gemini Analysis Failed: $e");
+      }
 
-           // Parse the text locally (Pass the full object for reconstruction)
-           aiReport = ReportParser.parse(recognizedText, reportId);
-           
-           // DEBUG: If no results found, show raw text in notes
-           if (aiReport.testResults.isEmpty) {
-             print("DEBUG: No results found. Raw text: ${recognizedText.text}");
-             aiReport = aiReport.copyWithCompleted(
-               patientName: aiReport.patientName,
-               patientId: aiReport.patientId,
-               testResults: [],
-               notes: 'DEBUG RAW TEXT:\n${recognizedText.text}',
-             );
-           }
-           
-           textRecognizer.close();
-         } catch (e) {
-           print("On-Device OCR Failed: $e");
-         }
-      }
-      
-      if (aiReport == null || aiReport.testResults.isEmpty) {
-         // Fallback logic if needed
-      }
-      
       if (aiReport == null) {
-         throw Exception("On-device analysis failed or platform not supported. Cloud analysis is disabled.");
+         throw Exception("AI analysis failed. Gemini did not return results.");
       }
 
       // ✅ NEW: Validate against Standards (Firebase)

@@ -236,13 +236,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _buildInfoTile(
           icon: Icons.lock_outline,
           title: 'Data Processing',
-          subtitle: 'Local processing only',
+          subtitle: 'Processed via Gemini AI (cloud)',
         ),
         const Divider(height: 1, color: Color(0xFFE2E8F0)),
         _buildInfoTile(
-          icon: Icons.cloud_off_outlined,
-          title: 'No Cloud Storage',
-          subtitle: 'Your data stays on device',
+          icon: Icons.cloud_outlined,
+          title: 'Cloud AI Analysis',
+          subtitle: 'Reports are sent to Gemini for analysis',
         ),
         const Divider(height: 1, color: Color(0xFFE2E8F0)),
         _buildNavigationTile(
